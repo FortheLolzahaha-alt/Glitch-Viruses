@@ -50,14 +50,13 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:14px 2
 .tag-game  {background:#1a2a1a;color:#4ade80;border:1px solid #1f3d1f}
 .tag-web   {background:#2a1f1a;color:#fb923c;border:1px solid #3d2a1f}
 .tag-script{background:#221a2a;color:#a78bfa;border:1px solid #321f3d}
+.tag-folder{background:#1a2020;color:#2dd4bf;border:1px solid #1f3535}
 .card-title{font-size:.95rem;font-weight:600;color:#fff;margin-bottom:5px}
 .card-desc{font-size:.82rem;color:#777;line-height:1.6;flex:1}
 
 .card-footer{display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid #242424}
 .card-meta{font-size:.75rem;color:#555}
 .card-links{display:flex;gap:7px}
-.icon-btn{width:30px;height:30px;border-radius:6px;border:1px solid #2a2a2a;background:transparent;color:#666;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;font-size:.8rem}
-.icon-btn:hover{border-color:#555;color:#ccc}
 .dl-btn{display:flex;align-items:center;gap:5px;padding:5px 12px;border-radius:6px;background:#1e1e1e;border:1px solid #2a2a2a;color:#aaa;font-size:.78rem;cursor:pointer;transition:all .15s}
 .dl-btn:hover{border-color:#555;color:#fff}
 
@@ -78,12 +77,26 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:14px 2
 
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 
+.upload-mode{display:flex;gap:6px;margin-bottom:14px;align-items:center}
+.mode-btn{padding:5px 14px;border-radius:5px;border:1px solid #2a2a2a;background:transparent;color:#888;font-size:.8rem;cursor:pointer;transition:all .15s}
+.mode-btn:hover{border-color:#444;color:#ccc}
+.mode-btn.active{background:#2a2a2a;border-color:#444;color:#fff}
+
 .drop-zone{border:1px dashed #333;border-radius:7px;padding:28px;text-align:center;cursor:pointer;transition:border-color .15s;position:relative}
 .drop-zone:hover,.drop-zone.drag{border-color:#555}
-.drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+.drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
 .drop-zone p{font-size:.82rem;color:#555}
 .drop-zone p span{color:#888}
 .file-name{font-size:.8rem;color:#6ee7b7;margin-top:8px}
+
+.folder-list{margin-top:10px;max-height:140px;overflow-y:auto;background:#161616;border:1px solid #2a2a2a;border-radius:6px;padding:8px 10px}
+.folder-list-item{font-size:.75rem;color:#666;padding:2px 0;font-family:monospace}
+
+.progress-wrap{margin-top:10px;display:none}
+.progress-wrap.visible{display:block}
+.progress-bar-bg{background:#1e1e1e;border-radius:4px;height:6px;overflow:hidden;border:1px solid #2a2a2a}
+.progress-bar-fill{height:100%;background:#22c55e;border-radius:4px;transition:width .2s;width:0%}
+.progress-label{font-size:.75rem;color:#555;margin-top:5px}
 
 .submit-btn{width:100%;padding:10px;border-radius:7px;background:#2a2a2a;border:1px solid #383838;color:#fff;font-size:.875rem;font-weight:500;cursor:pointer;transition:background .15s;margin-top:4px}
 .submit-btn:hover{background:#333}
@@ -102,6 +115,8 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:14px 2
 .token-status{font-size:.75rem}
 .token-status.ok{color:#4ade80}
 .token-status.bad{color:#f87171}
+.verify-btn{padding:5px 12px;border-radius:5px;border:1px solid #2a2a2a;background:transparent;color:#888;font-size:.78rem;cursor:pointer;transition:all .15s;white-space:nowrap}
+.verify-btn:hover{border-color:#444;color:#ccc}
 
 footer{text-align:center;padding:28px;border-top:1px solid #2a2a2a;color:#444;font-size:.82rem;margin-top:8px}
 </style>
@@ -120,7 +135,8 @@ footer{text-align:center;padding:28px;border-top:1px solid #2a2a2a;color:#444;fo
 <!-- TOKEN BAR -->
 <div class="token-bar">
   <label>GitHub Token:</label>
-  <input type="password" id="gh-token" placeholder="ghp_..." value="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">
+  <input type="password" id="gh-token" placeholder="ghp_...">
+  <button class="verify-btn" onclick="verifyToken()">Verify</button>
   <span class="token-status" id="token-status"></span>
 </div>
 
@@ -132,14 +148,8 @@ footer{text-align:center;padding:28px;border-top:1px solid #2a2a2a;color:#444;fo
 
 <!-- STATS -->
 <div class="stats">
-  <div>
-    <div class="stat-num" id="proj-count">0</div>
-    <div class="stat-label">Projects</div>
-  </div>
-  <div>
-    <div class="stat-num" id="dl-count">0</div>
-    <div class="stat-label">Downloads</div>
-  </div>
+  <div><div class="stat-num" id="proj-count">0</div><div class="stat-label">Projects</div></div>
+  <div><div class="stat-num" id="dl-count">0</div><div class="stat-label">Downloads</div></div>
 </div>
 
 <!-- FILTER -->
@@ -151,11 +161,12 @@ footer{text-align:center;padding:28px;border-top:1px solid #2a2a2a;color:#444;fo
   <button class="filter-btn" data-filter="game">Game</button>
   <button class="filter-btn" data-filter="script">Script</button>
   <button class="filter-btn" data-filter="web">Web</button>
+  <button class="filter-btn" data-filter="folder">Folder</button>
 </div>
 
 <!-- PROJECTS GRID -->
 <div class="projects" id="projects-grid">
-  <div style="grid-column:1/-1;text-align:center;padding:40px;color:#444;font-size:.9rem">Loading projects…</div>
+  <div style="grid-column:1/-1;text-align:center;padding:40px;color:#444;font-size:.9rem">Paste your token above and click Verify to load projects.</div>
 </div>
 
 <!-- UPLOAD -->
@@ -165,6 +176,13 @@ footer{text-align:center;padding:28px;border-top:1px solid #2a2a2a;color:#444;fo
     <span id="upload-toggle-label">▼ expand</span>
   </div>
   <div class="upload-body" id="upload-body">
+
+    <div class="upload-mode">
+      <span style="font-size:.78rem;color:#666;margin-right:4px">Upload type:</span>
+      <button class="mode-btn active" id="mode-file-btn" onclick="setMode('file')">📄 Single File</button>
+      <button class="mode-btn" id="mode-folder-btn" onclick="setMode('folder')">📁 Folder</button>
+    </div>
+
     <div class="form-grid">
       <div class="form-row">
         <label>Project name *</label>
@@ -178,6 +196,7 @@ footer{text-align:center;padding:28px;border-top:1px solid #2a2a2a;color:#444;fo
           <option value="game">Game</option>
           <option value="script">Script</option>
           <option value="web">Web</option>
+          <option value="folder">Folder</option>
         </select>
       </div>
     </div>
@@ -185,7 +204,9 @@ footer{text-align:center;padding:28px;border-top:1px solid #2a2a2a;color:#444;fo
       <label>Description *</label>
       <textarea id="up-desc" placeholder="What does it do?"></textarea>
     </div>
-    <div class="form-row">
+
+    <!-- Single file drop zone -->
+    <div class="form-row" id="file-zone">
       <label>File *</label>
       <div class="drop-zone" id="drop-zone">
         <input type="file" id="up-file" onchange="onFileChange(this)">
@@ -193,6 +214,23 @@ footer{text-align:center;padding:28px;border-top:1px solid #2a2a2a;color:#444;fo
         <div class="file-name" id="file-name-display"></div>
       </div>
     </div>
+
+    <!-- Folder drop zone -->
+    <div class="form-row" id="folder-zone" style="display:none">
+      <label>Folder *</label>
+      <div class="drop-zone" id="folder-drop-zone">
+        <input type="file" id="up-folder" webkitdirectory multiple onchange="onFolderChange(this)">
+        <p>Drop folder here or <span>click to browse</span></p>
+        <div class="file-name" id="folder-name-display"></div>
+      </div>
+      <div class="folder-list" id="folder-file-list" style="display:none"></div>
+    </div>
+
+    <div class="progress-wrap" id="progress-wrap">
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-fill"></div></div>
+      <div class="progress-label" id="progress-label">Uploading…</div>
+    </div>
+
     <button class="submit-btn" id="submit-btn" onclick="uploadProject()">Upload to GitHub</button>
     <div class="status-msg" id="status-msg"></div>
   </div>
@@ -209,109 +247,173 @@ const META  = 'projects.json';
 
 let projects = [];
 let selectedFile = null;
-let totalDl = 0;
+let selectedFolderFiles = [];
+let uploadMode = 'file';
 
 function getToken() { return document.getElementById('gh-token').value.trim(); }
 
-// ── helpers ──────────────────────────────────────────────────────────────────
+// ── KEY FIX: GitHub PATs use "token" prefix, NOT "Bearer" ───────────────────
+function ghHeaders() {
+  return {
+    'Authorization': 'token ' + getToken(),
+    'Accept': 'application/vnd.github.v3+json'
+  };
+}
+
 async function ghGet(path) {
-  const r = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${path}`,
-    {headers:{Authorization:'Bearer '+getToken(),'Accept':'application/vnd.github.v3+json'}});
-  return r;
+  return fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${path}`,
+    { headers: ghHeaders() });
 }
 
 async function ghPut(path, content64, message, sha) {
-  const body = {message, content:content64};
+  const body = { message, content: content64 };
   if (sha) body.sha = sha;
-  const r = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${path}`,
-    {method:'PUT',headers:{Authorization:'Bearer '+getToken(),'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},
-     body:JSON.stringify(body)});
-  return r;
+  return fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${path}`, {
+    method: 'PUT',
+    headers: { ...ghHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
 }
 
 function b64(str) { return btoa(unescape(encodeURIComponent(str))); }
 
 async function fileToB64(file) {
-  return new Promise((res,rej)=>{
+  return new Promise((res, rej) => {
     const fr = new FileReader();
-    fr.onload = ()=>res(fr.result.split(',')[1]);
+    fr.onload = () => res(fr.result.split(',')[1]);
     fr.onerror = rej;
     fr.readAsDataURL(file);
   });
 }
 
-// ── load projects ─────────────────────────────────────────────────────────────
+// ── Token verify ──────────────────────────────────────────────────────────────
+async function verifyToken() {
+  const statusEl = document.getElementById('token-status');
+  if (!getToken()) { statusEl.textContent = '✗ No token'; statusEl.className = 'token-status bad'; return; }
+  statusEl.textContent = 'Checking…'; statusEl.className = 'token-status';
+  try {
+    const r = await fetch('https://api.github.com/user', { headers: ghHeaders() });
+    if (r.ok) {
+      const d = await r.json();
+      statusEl.textContent = `✓ Logged in as ${d.login}`;
+      statusEl.className = 'token-status ok';
+      loadProjects();
+    } else {
+      statusEl.textContent = '✗ Bad credentials';
+      statusEl.className = 'token-status bad';
+    }
+  } catch(e) {
+    statusEl.textContent = '✗ Network error';
+    statusEl.className = 'token-status bad';
+  }
+}
+
+// ── Upload mode ───────────────────────────────────────────────────────────────
+function setMode(mode) {
+  uploadMode = mode;
+  document.getElementById('file-zone').style.display   = mode === 'file'   ? '' : 'none';
+  document.getElementById('folder-zone').style.display = mode === 'folder' ? '' : 'none';
+  document.getElementById('mode-file-btn').classList.toggle('active', mode === 'file');
+  document.getElementById('mode-folder-btn').classList.toggle('active', mode === 'folder');
+  if (mode === 'folder') document.getElementById('up-type').value = 'folder';
+}
+
+// ── Load projects ─────────────────────────────────────────────────────────────
 async function loadProjects() {
   const grid = document.getElementById('projects-grid');
+  grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:#444;font-size:.9rem">Loading projects…</div>`;
   try {
     const r = await ghGet(META);
+    if (r.status === 401) {
+      grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:#f87171;font-size:.85rem">Bad credentials — check your token.</div>`;
+      return;
+    }
     if (r.status === 404) { projects = []; renderGrid(); return; }
-    if (!r.ok) { grid.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:40px;color:#f87171;font-size:.85rem">Could not load — check your token and that the repo exists.</div>`; return; }
+    if (!r.ok) {
+      grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:#f87171;font-size:.85rem">Could not load projects.</div>`;
+      return;
+    }
     const data = await r.json();
-    projects = JSON.parse(atob(data.content.replace(/\n/g,'')));
+    projects = JSON.parse(atob(data.content.replace(/\n/g, '')));
   } catch(e) { projects = []; }
   renderGrid();
 }
 
-const ICONS = {exe:'⚙️',tool:'🛠️',game:'🎮',script:'📜',web:'🌐'};
-const typeLabel = {exe:'EXE',tool:'Tool',game:'Game',script:'Script',web:'Web'};
+const ICONS = { exe:'⚙️', tool:'🛠️', game:'🎮', script:'📜', web:'🌐', folder:'📁' };
+const TYPE_LABEL = { exe:'EXE', tool:'Tool', game:'Game', script:'Script', web:'Web', folder:'Folder' };
 
-function renderGrid(filter='all') {
+function renderGrid(filter = 'all') {
   const grid = document.getElementById('projects-grid');
-  const visible = filter==='all' ? projects : projects.filter(p=>p.type===filter);
+  const visible = filter === 'all' ? projects : projects.filter(p => p.type === filter);
   document.getElementById('proj-count').textContent = projects.length;
-  totalDl = projects.reduce((s,p)=>s+(p.downloads||0),0);
-  document.getElementById('dl-count').textContent = totalDl.toLocaleString();
+  document.getElementById('dl-count').textContent = projects.reduce((s,p)=>s+(p.downloads||0),0).toLocaleString();
   if (!visible.length) {
-    grid.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:40px;color:#444;font-size:.9rem">No projects yet — upload one below!</div>`;
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:#444;font-size:.9rem">No projects yet — upload one below!</div>`;
     return;
   }
-  grid.innerHTML = visible.map((p,i)=>{
-    const isNew = i === 0;
-    const dlUrl = p.fileUrl || '#';
-    return `
-    <div class="project-card" data-tags="${p.type}">
-      <div class="card-icon">${ICONS[p.type]||'📦'}${isNew?'<span class="new-badge">NEW</span>':''}</div>
+  grid.innerHTML = visible.map((p, i) => `
+    <div class="project-card">
+      <div class="card-icon">${ICONS[p.type]||'📦'}${i===0?'<span class="new-badge">NEW</span>':''}</div>
       <div class="card-body">
-        <div class="card-tags"><span class="tag tag-${p.type}">${typeLabel[p.type]||p.type}</span></div>
+        <div class="card-tags">
+          <span class="tag tag-${p.type}">${TYPE_LABEL[p.type]||p.type}</span>
+          ${p.fileCount ? `<span class="tag tag-folder">${p.fileCount} files</span>` : ''}
+        </div>
         <div class="card-title">${esc(p.name)}</div>
         <div class="card-desc">${esc(p.desc)}</div>
         <div class="card-footer">
           <span class="card-meta">${p.date||''}</span>
           <div class="card-links">
-            ${dlUrl!=='#'?`<a href="${dlUrl}" class="dl-btn" target="_blank" download>⬇ Download</a>`:'<span class="card-meta">No file</span>'}
+            ${p.folderUrl
+              ? `<a href="${p.folderUrl}" class="dl-btn" target="_blank">📁 Browse on GitHub</a>`
+              : p.fileUrl
+                ? `<a href="${p.fileUrl}" class="dl-btn" target="_blank" download>⬇ Download</a>`
+                : '<span class="card-meta">No file</span>'
+            }
           </div>
         </div>
       </div>
-    </div>`}).join('');
+    </div>`).join('');
 }
 
 function esc(s){ const d=document.createElement('div');d.textContent=s||'';return d.innerHTML; }
 
-// ── filter ────────────────────────────────────────────────────────────────────
-document.querySelectorAll('.filter-btn').forEach(btn=>{
-  btn.addEventListener('click',()=>{
+// ── Filters ───────────────────────────────────────────────────────────────────
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
     document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
     renderGrid(btn.dataset.filter);
   });
 });
 
-// ── upload toggle ─────────────────────────────────────────────────────────────
+// ── Upload toggle ─────────────────────────────────────────────────────────────
 function toggleUpload() {
   const body = document.getElementById('upload-body');
   const lbl  = document.getElementById('upload-toggle-label');
-  const open = body.classList.toggle('open');
-  lbl.textContent = open ? '▲ collapse' : '▼ expand';
+  lbl.textContent = body.classList.toggle('open') ? '▲ collapse' : '▼ expand';
 }
 
-// ── file picker ───────────────────────────────────────────────────────────────
+// ── File picker ───────────────────────────────────────────────────────────────
 function onFileChange(input) {
-  selectedFile = input.files[0]||null;
+  selectedFile = input.files[0] || null;
   document.getElementById('file-name-display').textContent = selectedFile ? selectedFile.name : '';
 }
 
-// drag-and-drop
+function onFolderChange(input) {
+  selectedFolderFiles = Array.from(input.files);
+  const display = document.getElementById('folder-name-display');
+  const listEl  = document.getElementById('folder-file-list');
+  if (!selectedFolderFiles.length) { display.textContent=''; listEl.style.display='none'; return; }
+  const folderName = selectedFolderFiles[0].webkitRelativePath.split('/')[0];
+  display.textContent = `📁 ${folderName} (${selectedFolderFiles.length} files)`;
+  listEl.style.display = 'block';
+  listEl.innerHTML = selectedFolderFiles.slice(0,60).map(f=>
+    `<div class="folder-list-item">${esc(f.webkitRelativePath)}</div>`
+  ).join('') + (selectedFolderFiles.length>60 ? `<div style="font-size:.75rem;color:#555;padding:4px 0">…and ${selectedFolderFiles.length-60} more</div>` : '');
+}
+
+// Drag-drop single file
 const dz = document.getElementById('drop-zone');
 dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag')});
 dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));
@@ -321,69 +423,137 @@ dz.addEventListener('drop',e=>{
   if(f){selectedFile=f;document.getElementById('file-name-display').textContent=f.name;}
 });
 
-// ── upload ────────────────────────────────────────────────────────────────────
-function setStatus(msg,type){
-  const el=document.getElementById('status-msg');
-  el.textContent=msg; el.className='status-msg '+type;
+// Drag-drop folder
+const fdz = document.getElementById('folder-drop-zone');
+fdz.addEventListener('dragover',e=>{e.preventDefault();fdz.classList.add('drag')});
+fdz.addEventListener('dragleave',()=>fdz.classList.remove('drag'));
+fdz.addEventListener('drop',async e=>{
+  e.preventDefault();fdz.classList.remove('drag');
+  const items = Array.from(e.dataTransfer.items);
+  const files = [];
+  async function traverse(entry, path) {
+    if (entry.isFile) {
+      await new Promise(res=>entry.file(f=>{
+        Object.defineProperty(f,'webkitRelativePath',{value:path+f.name,writable:false});
+        files.push(f);res();
+      }));
+    } else if (entry.isDirectory) {
+      const reader=entry.createReader();
+      await new Promise(res=>reader.readEntries(async entries=>{
+        for(const ent of entries) await traverse(ent,path+entry.name+'/');
+        res();
+      }));
+    }
+  }
+  for(const item of items){const e2=item.webkitGetAsEntry();if(e2)await traverse(e2,'');}
+  if(files.length){
+    selectedFolderFiles=files;
+    document.getElementById('folder-name-display').textContent=`📁 dropped (${files.length} files)`;
+    const listEl=document.getElementById('folder-file-list');
+    listEl.style.display='block';
+    listEl.innerHTML=files.slice(0,60).map(f=>`<div class="folder-list-item">${esc(f.webkitRelativePath)}</div>`).join('');
+  }
+});
+
+// ── Progress ──────────────────────────────────────────────────────────────────
+function setProgress(pct,label){
+  document.getElementById('progress-wrap').classList.add('visible');
+  document.getElementById('progress-fill').style.width=pct+'%';
+  document.getElementById('progress-label').textContent=label;
+}
+function hideProgress(){
+  document.getElementById('progress-wrap').classList.remove('visible');
+  document.getElementById('progress-fill').style.width='0%';
 }
 
-async function uploadProject() {
-  const name = document.getElementById('up-name').value.trim();
-  const type = document.getElementById('up-type').value;
-  const desc = document.getElementById('up-desc').value.trim();
-  const token = getToken();
+function setStatus(msg,type){
+  const el=document.getElementById('status-msg');
+  el.textContent=msg;el.className='status-msg '+type;
+}
 
-  if (!name||!desc||!selectedFile) { setStatus('Please fill in all fields and select a file.','error'); return; }
-  if (!token) { setStatus('Enter your GitHub token in the bar at the top.','error'); return; }
+// ── Upload ────────────────────────────────────────────────────────────────────
+async function uploadProject(){
+  const name=document.getElementById('up-name').value.trim();
+  const type=document.getElementById('up-type').value;
+  const desc=document.getElementById('up-desc').value.trim();
 
-  const btn = document.getElementById('submit-btn');
-  btn.disabled = true;
-  setStatus('Uploading file to GitHub…','loading');
+  if(!name||!desc){setStatus('Please fill in name and description.','error');return;}
+  if(!getToken()){setStatus('Enter your GitHub token in the bar at the top.','error');return;}
+  if(uploadMode==='file'&&!selectedFile){setStatus('Please select a file.','error');return;}
+  if(uploadMode==='folder'&&!selectedFolderFiles.length){setStatus('Please select a folder.','error');return;}
 
-  try {
-    // 1. upload file
-    const filePath = `files/${Date.now()}_${selectedFile.name.replace(/\s+/g,'_')}`;
-    const fileB64  = await fileToB64(selectedFile);
-    const fr = await ghPut(filePath, fileB64, `Add file: ${name}`, null);
-    if (!fr.ok) { const e=await fr.json(); throw new Error(e.message||'File upload failed'); }
-    const frData = await fr.json();
-    const fileUrl = frData.content.download_url;
+  const btn=document.getElementById('submit-btn');
+  btn.disabled=true;
+  hideProgress();
 
-    // 2. load existing meta
+  try{
+    const ts=Date.now();
+    let entry;
+
+    if(uploadMode==='file'){
+      setStatus('Uploading file…','loading');
+      setProgress(10,'Uploading file…');
+      const filePath=`files/${ts}_${selectedFile.name.replace(/\s+/g,'_')}`;
+      const fileB64=await fileToB64(selectedFile);
+      const fr=await ghPut(filePath,fileB64,`Add file: ${name}`,null);
+      if(!fr.ok){const e=await fr.json();throw new Error(e.message||'File upload failed');}
+      const frData=await fr.json();
+      setProgress(80,'Saving metadata…');
+      entry={name,type,desc,fileUrl:frData.content.download_url,
+        date:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}),downloads:0};
+
+    }else{
+      const folderName=(selectedFolderFiles[0].webkitRelativePath||selectedFolderFiles[0].name).split('/')[0]||`folder_${ts}`;
+      const basePath=`files/${ts}_${folderName.replace(/\s+/g,'_')}`;
+      const total=selectedFolderFiles.length;
+
+      for(let i=0;i<total;i++){
+        const file=selectedFolderFiles[i];
+        const relPath=file.webkitRelativePath||file.name;
+        const innerPath=relPath.split('/').slice(1).join('/')||file.name;
+        const ghPath=`${basePath}/${innerPath}`;
+        const fileB64=await fileToB64(file);
+        setProgress(Math.round(10+(i/total)*75),`Uploading ${i+1}/${total}: ${file.name}`);
+        setStatus(`Uploading folder (${i+1}/${total})…`,'loading');
+        const fr=await ghPut(ghPath,fileB64,`Add: ${innerPath}`,null);
+        if(!fr.ok){const e=await fr.json();throw new Error(`"${innerPath}": ${e.message}`);}
+      }
+
+      setProgress(88,'Saving metadata…');
+      entry={name,type:type||'folder',desc,
+        folderUrl:`https://github.com/${OWNER}/${REPO}/tree/main/${basePath}`,
+        fileCount:total,
+        date:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}),downloads:0};
+    }
+
+    // Save projects.json
     setStatus('Saving project info…','loading');
-    let metaSha = null;
-    try {
-      const mr = await ghGet(META);
-      if (mr.ok) { const md=await mr.json(); metaSha=md.sha; projects=JSON.parse(atob(md.content.replace(/\n/g,''))); }
-    } catch(e){}
-
-    // 3. prepend new project
-    const entry = {
-      name, type, desc, fileUrl,
-      date: new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}),
-      downloads: 0
-    };
+    let metaSha=null;
+    try{
+      const mr=await ghGet(META);
+      if(mr.ok){const md=await mr.json();metaSha=md.sha;projects=JSON.parse(atob(md.content.replace(/\n/g,'')));}
+    }catch(e){}
     projects.unshift(entry);
+    const mr2=await ghPut(META,b64(JSON.stringify(projects,null,2)),`Add project: ${name}`,metaSha);
+    if(!mr2.ok){const e=await mr2.json();throw new Error(e.message||'Meta save failed');}
 
-    // 4. save meta
-    const mr2 = await ghPut(META, b64(JSON.stringify(projects,null,2)), `Add project: ${name}`, metaSha);
-    if (!mr2.ok) { const e=await mr2.json(); throw new Error(e.message||'Meta save failed'); }
-
-    setStatus('Project uploaded successfully!','success');
+    setProgress(100,'Done!');
+    setStatus(uploadMode==='folder'?`Folder uploaded (${entry.fileCount} files)!`:'Project uploaded!','success');
     renderGrid();
-    document.getElementById('up-name').value='';
-    document.getElementById('up-desc').value='';
-    document.getElementById('file-name-display').textContent='';
+    ['up-name','up-desc'].forEach(id=>document.getElementById(id).value='');
+    ['file-name-display','folder-name-display'].forEach(id=>document.getElementById(id).textContent='');
+    document.getElementById('folder-file-list').style.display='none';
     document.getElementById('up-file').value='';
-    selectedFile=null;
-  } catch(err) {
+    document.getElementById('up-folder').value='';
+    selectedFile=null;selectedFolderFiles=[];
+    setTimeout(hideProgress,2000);
+
+  }catch(err){
     setStatus('Error: '+err.message,'error');
+    hideProgress();
   }
   btn.disabled=false;
 }
-
-// ── init ──────────────────────────────────────────────────────────────────────
-loadProjects();
 </script>
 </body>
 </html>

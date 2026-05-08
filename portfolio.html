@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Glitch Viruses</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#121212;color:#e0e0e0;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
+a{color:inherit;text-decoration:none}
+
+/* NAV */
+nav{display:flex;align-items:center;justify-content:space-between;padding:14px 28px;border-bottom:1px solid #2a2a2a;background:#121212;position:sticky;top:0;z-index:100}
+.nav-logo{font-size:1rem;font-weight:600;color:#fff}
+.nav-links{display:flex;gap:20px}
+.nav-links a{font-size:.875rem;color:#888;transition:color .15s}
+.nav-links a:hover{color:#e0e0e0}
+
+/* HERO */
+.hero{padding:56px 28px 36px;max-width:680px}
+.hero h1{font-size:1.9rem;font-weight:600;color:#fff;line-height:1.25;margin-bottom:10px}
+.hero p{font-size:.925rem;color:#888;line-height:1.7}
+
+/* STATS */
+.stats{display:flex;gap:40px;padding:20px 28px;border-top:1px solid #2a2a2a;border-bottom:1px solid #2a2a2a}
+.stat-num{font-size:1.5rem;font-weight:600;color:#fff}
+.stat-label{font-size:.78rem;color:#666;margin-top:2px}
+
+/* FILTER */
+.filter-bar{display:flex;gap:8px;padding:24px 28px 0;flex-wrap:wrap;align-items:center}
+.filter-label{font-size:.82rem;color:#666;margin-right:4px}
+.filter-btn{padding:5px 13px;border-radius:5px;border:1px solid #2a2a2a;background:transparent;color:#888;font-size:.8rem;cursor:pointer;transition:all .15s}
+.filter-btn:hover{border-color:#444;color:#ccc}
+.filter-btn.active{background:#2a2a2a;border-color:#444;color:#fff}
+
+/* PROJECTS GRID */
+.projects{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;padding:24px 28px}
+
+.project-card{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:10px;overflow:hidden;display:flex;flex-direction:column;transition:border-color .2s}
+.project-card:hover{border-color:#3a3a3a}
+
+.card-icon{height:90px;display:flex;align-items:center;justify-content:center;font-size:2.2rem;background:#1e1e1e;border-bottom:1px solid #2a2a2a;position:relative}
+.new-badge{position:absolute;top:8px;right:8px;background:#22c55e;color:#fff;font-size:.65rem;font-weight:700;padding:2px 7px;border-radius:3px}
+
+.card-body{padding:14px;flex:1;display:flex;flex-direction:column}
+.card-tags{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px}
+.tag{font-size:.7rem;padding:2px 7px;border-radius:3px;font-weight:500}
+.tag-exe   {background:#2a1a1a;color:#f87171;border:1px solid #3d1f1f}
+.tag-tool  {background:#1a1f2a;color:#60a5fa;border:1px solid #1f2d3d}
+.tag-game  {background:#1a2a1a;color:#4ade80;border:1px solid #1f3d1f}
+.tag-web   {background:#2a1f1a;color:#fb923c;border:1px solid #3d2a1f}
+.tag-script{background:#221a2a;color:#a78bfa;border:1px solid #321f3d}
+.card-title{font-size:.95rem;font-weight:600;color:#fff;margin-bottom:5px}
+.card-desc{font-size:.82rem;color:#777;line-height:1.6;flex:1}
+
+.card-footer{display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid #242424}
+.card-meta{font-size:.75rem;color:#555}
+.card-links{display:flex;gap:7px}
+.icon-btn{width:30px;height:30px;border-radius:6px;border:1px solid #2a2a2a;background:transparent;color:#666;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;font-size:.8rem}
+.icon-btn:hover{border-color:#555;color:#ccc}
+.dl-btn{display:flex;align-items:center;gap:5px;padding:5px 12px;border-radius:6px;background:#1e1e1e;border:1px solid #2a2a2a;color:#aaa;font-size:.78rem;cursor:pointer;transition:all .15s}
+.dl-btn:hover{border-color:#555;color:#fff}
+
+/* UPLOAD SECTION */
+.upload-section{margin:8px 28px 28px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:10px;overflow:hidden}
+.upload-header{padding:14px 18px;border-bottom:1px solid #2a2a2a;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none}
+.upload-header h2{font-size:.95rem;font-weight:600;color:#fff}
+.upload-header span{font-size:.8rem;color:#555}
+.upload-body{padding:18px;display:none}
+.upload-body.open{display:block}
+
+.form-row{margin-bottom:13px}
+.form-row label{display:block;font-size:.78rem;color:#666;margin-bottom:5px}
+.form-row input,.form-row textarea,.form-row select{width:100%;background:#121212;border:1px solid #2a2a2a;border-radius:6px;padding:8px 11px;color:#e0e0e0;font-size:.85rem;font-family:inherit;transition:border-color .15s}
+.form-row input:focus,.form-row textarea:focus,.form-row select:focus{outline:none;border-color:#444}
+.form-row textarea{resize:vertical;min-height:70px}
+.form-row select option{background:#1a1a1a}
+
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+.drop-zone{border:1px dashed #333;border-radius:7px;padding:28px;text-align:center;cursor:pointer;transition:border-color .15s;position:relative}
+.drop-zone:hover,.drop-zone.drag{border-color:#555}
+.drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+.drop-zone p{font-size:.82rem;color:#555}
+.drop-zone p span{color:#888}
+.file-name{font-size:.8rem;color:#6ee7b7;margin-top:8px}
+
+.submit-btn{width:100%;padding:10px;border-radius:7px;background:#2a2a2a;border:1px solid #383838;color:#fff;font-size:.875rem;font-weight:500;cursor:pointer;transition:background .15s;margin-top:4px}
+.submit-btn:hover{background:#333}
+.submit-btn:disabled{opacity:.5;cursor:not-allowed}
+
+.status-msg{margin-top:10px;font-size:.8rem;padding:8px 12px;border-radius:6px;display:none}
+.status-msg.success{background:#1a2a1a;border:1px solid #1f3d1f;color:#4ade80;display:block}
+.status-msg.error{background:#2a1a1a;border:1px solid #3d1f1f;color:#f87171;display:block}
+.status-msg.loading{background:#1e1e1e;border:1px solid #2a2a2a;color:#888;display:block}
+
+/* TOKEN INPUT */
+.token-bar{background:#161616;border-bottom:1px solid #2a2a2a;padding:10px 28px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.token-bar label{font-size:.78rem;color:#555;white-space:nowrap}
+.token-bar input{flex:1;min-width:160px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:5px;padding:6px 10px;color:#e0e0e0;font-size:.8rem;font-family:monospace}
+.token-bar input:focus{outline:none;border-color:#444}
+.token-status{font-size:.75rem}
+.token-status.ok{color:#4ade80}
+.token-status.bad{color:#f87171}
+
+footer{text-align:center;padding:28px;border-top:1px solid #2a2a2a;color:#444;font-size:.82rem;margin-top:8px}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">Glitch Viruses</div>
+  <div class="nav-links">
+    <a href="#projects">Projects</a>
+    <a href="#upload">Upload</a>
+    <a href="https://github.com/FortheLolzahaha-alt/Glitch-Viruses" target="_blank">GitHub</a>
+  </div>
+</nav>
+
+<!-- TOKEN BAR -->
+<div class="token-bar">
+  <label>GitHub Token:</label>
+  <input type="password" id="gh-token" placeholder="ghp_..." value="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">
+  <span class="token-status" id="token-status"></span>
+</div>
+
+<!-- HERO -->
+<div class="hero">
+  <h1>Glitch Viruses</h1>
+  <p>A collection of tools, executables, games, and scripts. Download, explore, or upload your own.</p>
+</div>
+
+<!-- STATS -->
+<div class="stats">
+  <div>
+    <div class="stat-num" id="proj-count">0</div>
+    <div class="stat-label">Projects</div>
+  </div>
+  <div>
+    <div class="stat-num" id="dl-count">0</div>
+    <div class="stat-label">Downloads</div>
+  </div>
+</div>
+
+<!-- FILTER -->
+<div class="filter-bar" id="projects">
+  <span class="filter-label">Filter:</span>
+  <button class="filter-btn active" data-filter="all">All</button>
+  <button class="filter-btn" data-filter="exe">EXE</button>
+  <button class="filter-btn" data-filter="tool">Tool</button>
+  <button class="filter-btn" data-filter="game">Game</button>
+  <button class="filter-btn" data-filter="script">Script</button>
+  <button class="filter-btn" data-filter="web">Web</button>
+</div>
+
+<!-- PROJECTS GRID -->
+<div class="projects" id="projects-grid">
+  <div style="grid-column:1/-1;text-align:center;padding:40px;color:#444;font-size:.9rem">Loading projects…</div>
+</div>
+
+<!-- UPLOAD -->
+<div class="upload-section" id="upload">
+  <div class="upload-header" onclick="toggleUpload()">
+    <h2>Upload a project</h2>
+    <span id="upload-toggle-label">▼ expand</span>
+  </div>
+  <div class="upload-body" id="upload-body">
+    <div class="form-grid">
+      <div class="form-row">
+        <label>Project name *</label>
+        <input type="text" id="up-name" placeholder="My Tool">
+      </div>
+      <div class="form-row">
+        <label>Type *</label>
+        <select id="up-type">
+          <option value="exe">EXE</option>
+          <option value="tool">Tool</option>
+          <option value="game">Game</option>
+          <option value="script">Script</option>
+          <option value="web">Web</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <label>Description *</label>
+      <textarea id="up-desc" placeholder="What does it do?"></textarea>
+    </div>
+    <div class="form-row">
+      <label>File *</label>
+      <div class="drop-zone" id="drop-zone">
+        <input type="file" id="up-file" onchange="onFileChange(this)">
+        <p>Drop file here or <span>click to browse</span></p>
+        <div class="file-name" id="file-name-display"></div>
+      </div>
+    </div>
+    <button class="submit-btn" id="submit-btn" onclick="uploadProject()">Upload to GitHub</button>
+    <div class="status-msg" id="status-msg"></div>
+  </div>
+</div>
+
+<footer>
+  Glitch Viruses · <a href="https://github.com/FortheLolzahaha-alt/Glitch-Viruses" target="_blank" style="color:#555">GitHub</a>
+</footer>
+
+<script>
+const OWNER = 'FortheLolzahaha-alt';
+const REPO  = 'Glitch-Viruses';
+const META  = 'projects.json';
+
+let projects = [];
+let selectedFile = null;
+let totalDl = 0;
+
+function getToken() { return document.getElementById('gh-token').value.trim(); }
+
+// ── helpers ──────────────────────────────────────────────────────────────────
+async function ghGet(path) {
+  const r = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${path}`,
+    {headers:{Authorization:'Bearer '+getToken(),'Accept':'application/vnd.github.v3+json'}});
+  return r;
+}
+
+async function ghPut(path, content64, message, sha) {
+  const body = {message, content:content64};
+  if (sha) body.sha = sha;
+  const r = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${path}`,
+    {method:'PUT',headers:{Authorization:'Bearer '+getToken(),'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},
+     body:JSON.stringify(body)});
+  return r;
+}
+
+function b64(str) { return btoa(unescape(encodeURIComponent(str))); }
+
+async function fileToB64(file) {
+  return new Promise((res,rej)=>{
+    const fr = new FileReader();
+    fr.onload = ()=>res(fr.result.split(',')[1]);
+    fr.onerror = rej;
+    fr.readAsDataURL(file);
+  });
+}
+
+// ── load projects ─────────────────────────────────────────────────────────────
+async function loadProjects() {
+  const grid = document.getElementById('projects-grid');
+  try {
+    const r = await ghGet(META);
+    if (r.status === 404) { projects = []; renderGrid(); return; }
+    if (!r.ok) { grid.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:40px;color:#f87171;font-size:.85rem">Could not load — check your token and that the repo exists.</div>`; return; }
+    const data = await r.json();
+    projects = JSON.parse(atob(data.content.replace(/\n/g,'')));
+  } catch(e) { projects = []; }
+  renderGrid();
+}
+
+const ICONS = {exe:'⚙️',tool:'🛠️',game:'🎮',script:'📜',web:'🌐'};
+const typeLabel = {exe:'EXE',tool:'Tool',game:'Game',script:'Script',web:'Web'};
+
+function renderGrid(filter='all') {
+  const grid = document.getElementById('projects-grid');
+  const visible = filter==='all' ? projects : projects.filter(p=>p.type===filter);
+  document.getElementById('proj-count').textContent = projects.length;
+  totalDl = projects.reduce((s,p)=>s+(p.downloads||0),0);
+  document.getElementById('dl-count').textContent = totalDl.toLocaleString();
+  if (!visible.length) {
+    grid.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:40px;color:#444;font-size:.9rem">No projects yet — upload one below!</div>`;
+    return;
+  }
+  grid.innerHTML = visible.map((p,i)=>{
+    const isNew = i === 0;
+    const dlUrl = p.fileUrl || '#';
+    return `
+    <div class="project-card" data-tags="${p.type}">
+      <div class="card-icon">${ICONS[p.type]||'📦'}${isNew?'<span class="new-badge">NEW</span>':''}</div>
+      <div class="card-body">
+        <div class="card-tags"><span class="tag tag-${p.type}">${typeLabel[p.type]||p.type}</span></div>
+        <div class="card-title">${esc(p.name)}</div>
+        <div class="card-desc">${esc(p.desc)}</div>
+        <div class="card-footer">
+          <span class="card-meta">${p.date||''}</span>
+          <div class="card-links">
+            ${dlUrl!=='#'?`<a href="${dlUrl}" class="dl-btn" target="_blank" download>⬇ Download</a>`:'<span class="card-meta">No file</span>'}
+          </div>
+        </div>
+      </div>
+    </div>`}).join('');
+}
+
+function esc(s){ const d=document.createElement('div');d.textContent=s||'';return d.innerHTML; }
+
+// ── filter ────────────────────────────────────────────────────────────────────
+document.querySelectorAll('.filter-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    renderGrid(btn.dataset.filter);
+  });
+});
+
+// ── upload toggle ─────────────────────────────────────────────────────────────
+function toggleUpload() {
+  const body = document.getElementById('upload-body');
+  const lbl  = document.getElementById('upload-toggle-label');
+  const open = body.classList.toggle('open');
+  lbl.textContent = open ? '▲ collapse' : '▼ expand';
+}
+
+// ── file picker ───────────────────────────────────────────────────────────────
+function onFileChange(input) {
+  selectedFile = input.files[0]||null;
+  document.getElementById('file-name-display').textContent = selectedFile ? selectedFile.name : '';
+}
+
+// drag-and-drop
+const dz = document.getElementById('drop-zone');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag')});
+dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));
+dz.addEventListener('drop',e=>{
+  e.preventDefault();dz.classList.remove('drag');
+  const f=e.dataTransfer.files[0];
+  if(f){selectedFile=f;document.getElementById('file-name-display').textContent=f.name;}
+});
+
+// ── upload ────────────────────────────────────────────────────────────────────
+function setStatus(msg,type){
+  const el=document.getElementById('status-msg');
+  el.textContent=msg; el.className='status-msg '+type;
+}
+
+async function uploadProject() {
+  const name = document.getElementById('up-name').value.trim();
+  const type = document.getElementById('up-type').value;
+  const desc = document.getElementById('up-desc').value.trim();
+  const token = getToken();
+
+  if (!name||!desc||!selectedFile) { setStatus('Please fill in all fields and select a file.','error'); return; }
+  if (!token) { setStatus('Enter your GitHub token in the bar at the top.','error'); return; }
+
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  setStatus('Uploading file to GitHub…','loading');
+
+  try {
+    // 1. upload file
+    const filePath = `files/${Date.now()}_${selectedFile.name.replace(/\s+/g,'_')}`;
+    const fileB64  = await fileToB64(selectedFile);
+    const fr = await ghPut(filePath, fileB64, `Add file: ${name}`, null);
+    if (!fr.ok) { const e=await fr.json(); throw new Error(e.message||'File upload failed'); }
+    const frData = await fr.json();
+    const fileUrl = frData.content.download_url;
+
+    // 2. load existing meta
+    setStatus('Saving project info…','loading');
+    let metaSha = null;
+    try {
+      const mr = await ghGet(META);
+      if (mr.ok) { const md=await mr.json(); metaSha=md.sha; projects=JSON.parse(atob(md.content.replace(/\n/g,''))); }
+    } catch(e){}
+
+    // 3. prepend new project
+    const entry = {
+      name, type, desc, fileUrl,
+      date: new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}),
+      downloads: 0
+    };
+    projects.unshift(entry);
+
+    // 4. save meta
+    const mr2 = await ghPut(META, b64(JSON.stringify(projects,null,2)), `Add project: ${name}`, metaSha);
+    if (!mr2.ok) { const e=await mr2.json(); throw new Error(e.message||'Meta save failed'); }
+
+    setStatus('Project uploaded successfully!','success');
+    renderGrid();
+    document.getElementById('up-name').value='';
+    document.getElementById('up-desc').value='';
+    document.getElementById('file-name-display').textContent='';
+    document.getElementById('up-file').value='';
+    selectedFile=null;
+  } catch(err) {
+    setStatus('Error: '+err.message,'error');
+  }
+  btn.disabled=false;
+}
+
+// ── init ──────────────────────────────────────────────────────────────────────
+loadProjects();
+</script>
+</body>
+</html>

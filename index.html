@@ -132,10 +132,10 @@ footer{text-align:center;padding:28px;border-top:1px solid #2a2a2a;color:#444;fo
   </div>
 </nav>
 
-<!-- TOKEN BAR -->
+<!-- TOKEN BAR (only needed for uploading) -->
 <div class="token-bar">
-  <label>GitHub Token:</label>
-  <input type="password" id="gh-token" placeholder="ghp_...">
+  <label>GitHub Token (uploaders only):</label>
+  <input type="password" id="gh-token" placeholder="ghp_... (only needed to upload)">
   <button class="verify-btn" onclick="verifyToken()">Verify</button>
   <span class="token-status" id="token-status"></span>
 </div>
@@ -166,7 +166,7 @@ footer{text-align:center;padding:28px;border-top:1px solid #2a2a2a;color:#444;fo
 
 <!-- PROJECTS GRID -->
 <div class="projects" id="projects-grid">
-  <div style="grid-column:1/-1;text-align:center;padding:40px;color:#444;font-size:.9rem">Paste your token above and click Verify to load projects.</div>
+  <div style="grid-column:1/-1;text-align:center;padding:40px;color:#444;font-size:.9rem">Loading projects…</div>
 </div>
 
 <!-- UPLOAD -->
@@ -252,25 +252,26 @@ let uploadMode = 'file';
 
 function getToken() { return document.getElementById('gh-token').value.trim(); }
 
-// ── KEY FIX: GitHub PATs use "token" prefix, NOT "Bearer" ───────────────────
-function ghHeaders() {
-  return {
-    'Authorization': 'token ' + getToken(),
-    'Accept': 'application/vnd.github.v3+json'
-  };
+// Auth headers — only attach token if one is provided
+function ghHeaders(withAuth = false) {
+  const h = { 'Accept': 'application/vnd.github.v3+json' };
+  if (withAuth && getToken()) h['Authorization'] = 'token ' + getToken();
+  return h;
 }
 
+// Public read — no token needed (repo must be public)
 async function ghGet(path) {
   return fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${path}`,
-    { headers: ghHeaders() });
+    { headers: ghHeaders(false) });
 }
 
+// Write — always needs token
 async function ghPut(path, content64, message, sha) {
   const body = { message, content: content64 };
   if (sha) body.sha = sha;
   return fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${path}`, {
     method: 'PUT',
-    headers: { ...ghHeaders(), 'Content-Type': 'application/json' },
+    headers: { ...ghHeaders(true), 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   });
 }
@@ -286,18 +287,17 @@ async function fileToB64(file) {
   });
 }
 
-// ── Token verify ──────────────────────────────────────────────────────────────
+// ── Token verify (only needed for uploaders) ──────────────────────────────────
 async function verifyToken() {
   const statusEl = document.getElementById('token-status');
   if (!getToken()) { statusEl.textContent = '✗ No token'; statusEl.className = 'token-status bad'; return; }
   statusEl.textContent = 'Checking…'; statusEl.className = 'token-status';
   try {
-    const r = await fetch('https://api.github.com/user', { headers: ghHeaders() });
+    const r = await fetch('https://api.github.com/user', { headers: ghHeaders(true) });
     if (r.ok) {
       const d = await r.json();
       statusEl.textContent = `✓ Logged in as ${d.login}`;
       statusEl.className = 'token-status ok';
-      loadProjects();
     } else {
       statusEl.textContent = '✗ Bad credentials';
       statusEl.className = 'token-status bad';
@@ -318,19 +318,15 @@ function setMode(mode) {
   if (mode === 'folder') document.getElementById('up-type').value = 'folder';
 }
 
-// ── Load projects ─────────────────────────────────────────────────────────────
+// ── Load projects (PUBLIC — no token required) ────────────────────────────────
 async function loadProjects() {
   const grid = document.getElementById('projects-grid');
   grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:#444;font-size:.9rem">Loading projects…</div>`;
   try {
     const r = await ghGet(META);
-    if (r.status === 401) {
-      grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:#f87171;font-size:.85rem">Bad credentials — check your token.</div>`;
-      return;
-    }
     if (r.status === 404) { projects = []; renderGrid(); return; }
     if (!r.ok) {
-      grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:#f87171;font-size:.85rem">Could not load projects.</div>`;
+      grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:#f87171;font-size:.85rem">Could not load projects. Make sure the repo is public.</div>`;
       return;
     }
     const data = await r.json();
@@ -471,14 +467,14 @@ function setStatus(msg,type){
   el.textContent=msg;el.className='status-msg '+type;
 }
 
-// ── Upload ────────────────────────────────────────────────────────────────────
+// ── Upload (token required) ───────────────────────────────────────────────────
 async function uploadProject(){
   const name=document.getElementById('up-name').value.trim();
   const type=document.getElementById('up-type').value;
   const desc=document.getElementById('up-desc').value.trim();
 
   if(!name||!desc){setStatus('Please fill in name and description.','error');return;}
-  if(!getToken()){setStatus('Enter your GitHub token in the bar at the top.','error');return;}
+  if(!getToken()){setStatus('Enter your GitHub token above to upload.','error');return;}
   if(uploadMode==='file'&&!selectedFile){setStatus('Please select a file.','error');return;}
   if(uploadMode==='folder'&&!selectedFolderFiles.length){setStatus('Please select a folder.','error');return;}
 
@@ -554,6 +550,9 @@ async function uploadProject(){
   }
   btn.disabled=false;
 }
+
+// ── Load projects on page open (no token needed) ──────────────────────────────
+loadProjects();
 </script>
 </body>
 </html>

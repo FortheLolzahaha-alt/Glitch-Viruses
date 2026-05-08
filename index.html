@@ -250,22 +250,23 @@ let selectedFile = null;
 let selectedFolderFiles = [];
 let uploadMode = 'file';
 
+// Each folder file gets a stored relative path we control
+// We store it separately so we don't fight with read-only webkitRelativePath
+let folderFilePaths = [];
+
 function getToken() { return document.getElementById('gh-token').value.trim(); }
 
-// Auth headers — only attach token if one is provided
 function ghHeaders(withAuth = false) {
   const h = { 'Accept': 'application/vnd.github.v3+json' };
   if (withAuth && getToken()) h['Authorization'] = 'token ' + getToken();
   return h;
 }
 
-// Public read — no token needed (repo must be public)
 async function ghGet(path) {
   return fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${path}`,
     { headers: ghHeaders(false) });
 }
 
-// Write — always needs token
 async function ghPut(path, content64, message, sha) {
   const body = { message, content: content64 };
   if (sha) body.sha = sha;
@@ -287,7 +288,7 @@ async function fileToB64(file) {
   });
 }
 
-// ── Token verify (only needed for uploaders) ──────────────────────────────────
+// ── Token verify ──────────────────────────────────────────────────────────────
 async function verifyToken() {
   const statusEl = document.getElementById('token-status');
   if (!getToken()) { statusEl.textContent = '✗ No token'; statusEl.className = 'token-status bad'; return; }
@@ -318,7 +319,7 @@ function setMode(mode) {
   if (mode === 'folder') document.getElementById('up-type').value = 'folder';
 }
 
-// ── Load projects (PUBLIC — no token required) ────────────────────────────────
+// ── Load projects ─────────────────────────────────────────────────────────────
 async function loadProjects() {
   const grid = document.getElementById('projects-grid');
   grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:#444;font-size:.9rem">Loading projects…</div>`;
@@ -390,26 +391,28 @@ function toggleUpload() {
   lbl.textContent = body.classList.toggle('open') ? '▲ collapse' : '▼ expand';
 }
 
-// ── File picker ───────────────────────────────────────────────────────────────
+// ── File picker (single file) ─────────────────────────────────────────────────
 function onFileChange(input) {
   selectedFile = input.files[0] || null;
   document.getElementById('file-name-display').textContent = selectedFile ? selectedFile.name : '';
 }
 
+// ── File picker (folder via input) ───────────────────────────────────────────
 function onFolderChange(input) {
   selectedFolderFiles = Array.from(input.files);
+  folderFilePaths = selectedFolderFiles.map(f => f.webkitRelativePath || f.name);
   const display = document.getElementById('folder-name-display');
   const listEl  = document.getElementById('folder-file-list');
   if (!selectedFolderFiles.length) { display.textContent=''; listEl.style.display='none'; return; }
-  const folderName = selectedFolderFiles[0].webkitRelativePath.split('/')[0];
+  const folderName = folderFilePaths[0].split('/')[0];
   display.textContent = `📁 ${folderName} (${selectedFolderFiles.length} files)`;
   listEl.style.display = 'block';
-  listEl.innerHTML = selectedFolderFiles.slice(0,60).map(f=>
-    `<div class="folder-list-item">${esc(f.webkitRelativePath)}</div>`
+  listEl.innerHTML = folderFilePaths.slice(0,60).map(p=>
+    `<div class="folder-list-item">${esc(p)}</div>`
   ).join('') + (selectedFolderFiles.length>60 ? `<div style="font-size:.75rem;color:#555;padding:4px 0">…and ${selectedFolderFiles.length-60} more</div>` : '');
 }
 
-// Drag-drop single file
+// ── Drag-drop single file ─────────────────────────────────────────────────────
 const dz = document.getElementById('drop-zone');
 dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag')});
 dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));
@@ -419,7 +422,7 @@ dz.addEventListener('drop',e=>{
   if(f){selectedFile=f;document.getElementById('file-name-display').textContent=f.name;}
 });
 
-// Drag-drop folder
+// ── Drag-drop folder ──────────────────────────────────────────────────────────
 const fdz = document.getElementById('folder-drop-zone');
 fdz.addEventListener('dragover',e=>{e.preventDefault();fdz.classList.add('drag')});
 fdz.addEventListener('dragleave',()=>fdz.classList.remove('drag'));
@@ -427,27 +430,48 @@ fdz.addEventListener('drop',async e=>{
   e.preventDefault();fdz.classList.remove('drag');
   const items = Array.from(e.dataTransfer.items);
   const files = [];
+  const paths = [];
+
+  // FIX: traverse now receives an explicit path string we fully control,
+  // so there's no ambiguity about what to strip later in uploadProject.
   async function traverse(entry, path) {
     if (entry.isFile) {
-      await new Promise(res=>entry.file(f=>{
-        Object.defineProperty(f,'webkitRelativePath',{value:path+f.name,writable:false});
-        files.push(f);res();
+      await new Promise(res => entry.file(f => {
+        files.push(f);
+        paths.push(path + f.name);
+        res();
       }));
     } else if (entry.isDirectory) {
-      const reader=entry.createReader();
-      await new Promise(res=>reader.readEntries(async entries=>{
-        for(const ent of entries) await traverse(ent,path+entry.name+'/');
+      const reader = entry.createReader();
+      await new Promise(res => reader.readEntries(async entries => {
+        for (const ent of entries) await traverse(ent, path + entry.name + '/');
         res();
       }));
     }
   }
-  for(const item of items){const e2=item.webkitGetAsEntry();if(e2)await traverse(e2,'');}
-  if(files.length){
-    selectedFolderFiles=files;
-    document.getElementById('folder-name-display').textContent=`📁 dropped (${files.length} files)`;
-    const listEl=document.getElementById('folder-file-list');
-    listEl.style.display='block';
-    listEl.innerHTML=files.slice(0,60).map(f=>`<div class="folder-list-item">${esc(f.webkitRelativePath)}</div>`).join('');
+
+  for (const item of items) {
+    const entry = item.webkitGetAsEntry();
+    if (entry) {
+      // Pass empty path for top-level entries; traverse will build paths like
+      // "FolderName/sub/file.exe" or just "file.exe" for bare files.
+      await traverse(entry, '');
+    }
+  }
+
+  if (files.length) {
+    selectedFolderFiles = files;
+    folderFilePaths = paths;
+    const display = document.getElementById('folder-name-display');
+    const listEl  = document.getElementById('folder-file-list');
+    // Derive a display name from the first path
+    const firstName = paths[0] || '';
+    const displayName = firstName.includes('/') ? firstName.split('/')[0] : 'dropped';
+    display.textContent = `📁 ${displayName} (${files.length} files)`;
+    listEl.style.display = 'block';
+    listEl.innerHTML = paths.slice(0,60).map(p =>
+      `<div class="folder-list-item">${esc(p)}</div>`
+    ).join('') + (paths.length>60 ? `<div style="font-size:.75rem;color:#555;padding:4px 0">…and ${paths.length-60} more</div>` : '');
   }
 });
 
@@ -467,7 +491,7 @@ function setStatus(msg,type){
   el.textContent=msg;el.className='status-msg '+type;
 }
 
-// ── Upload (token required) ───────────────────────────────────────────────────
+// ── Upload ────────────────────────────────────────────────────────────────────
 async function uploadProject(){
   const name=document.getElementById('up-name').value.trim();
   const type=document.getElementById('up-type').value;
@@ -499,19 +523,39 @@ async function uploadProject(){
         date:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}),downloads:0};
 
     }else{
-      const folderName=(selectedFolderFiles[0].webkitRelativePath||selectedFolderFiles[0].name).split('/')[0]||`folder_${ts}`;
-      const basePath=`files/${ts}_${folderName.replace(/\s+/g,'_')}`;
-      const total=selectedFolderFiles.length;
+      // FIX: determine the root folder name from our controlled folderFilePaths array.
+      // If paths look like "FolderName/..." we use that as the base display name.
+      // If they're bare filenames (single files dropped), we just use a timestamp folder.
+      const firstPath = folderFilePaths[0] || '';
+      const hasRootFolder = firstPath.includes('/');
+      const rootFolderName = hasRootFolder ? firstPath.split('/')[0] : '';
+      const baseFolderLabel = rootFolderName || `folder_${ts}`;
+      const basePath = `files/${ts}_${baseFolderLabel.replace(/\s+/g,'_')}`;
+      const total = selectedFolderFiles.length;
 
       for(let i=0;i<total;i++){
-        const file=selectedFolderFiles[i];
-        const relPath=file.webkitRelativePath||file.name;
-        const innerPath=relPath.split('/').slice(1).join('/')||file.name;
-        const ghPath=`${basePath}/${innerPath}`;
-        const fileB64=await fileToB64(file);
+        const file = selectedFolderFiles[i];
+        const fullPath = folderFilePaths[i] || file.name;
+
+        // FIX: strip the root folder prefix if it exists, keeping subpaths intact.
+        // e.g. "MyFolder/sub/lol.exe" → "sub/lol.exe"
+        //      "lol.exe"              → "lol.exe"
+        //      "MyFolder/lol.exe"     → "lol.exe"
+        let innerPath;
+        if (rootFolderName && fullPath.startsWith(rootFolderName + '/')) {
+          innerPath = fullPath.slice(rootFolderName.length + 1);
+        } else {
+          innerPath = fullPath;
+        }
+
+        // Guard: innerPath must never be empty
+        if (!innerPath) innerPath = file.name;
+
+        const ghPath = `${basePath}/${innerPath}`;
+        const fileB64 = await fileToB64(file);
         setProgress(Math.round(10+(i/total)*75),`Uploading ${i+1}/${total}: ${file.name}`);
         setStatus(`Uploading folder (${i+1}/${total})…`,'loading');
-        const fr=await ghPut(ghPath,fileB64,`Add: ${innerPath}`,null);
+        const fr = await ghPut(ghPath,fileB64,`Add: ${innerPath}`,null);
         if(!fr.ok){const e=await fr.json();throw new Error(`"${innerPath}": ${e.message}`);}
       }
 
@@ -541,7 +585,7 @@ async function uploadProject(){
     document.getElementById('folder-file-list').style.display='none';
     document.getElementById('up-file').value='';
     document.getElementById('up-folder').value='';
-    selectedFile=null;selectedFolderFiles=[];
+    selectedFile=null;selectedFolderFiles=[];folderFilePaths=[];
     setTimeout(hideProgress,2000);
 
   }catch(err){
@@ -551,7 +595,7 @@ async function uploadProject(){
   btn.disabled=false;
 }
 
-// ── Load projects on page open (no token needed) ──────────────────────────────
+// ── Init ──────────────────────────────────────────────────────────────────────
 loadProjects();
 </script>
 </body>

@@ -6,154 +6,183 @@
 <title>Glitch Viruses</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#121212;color:#e0e0e0;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
+body{background:#121212;color:#e0e0e0;font-family:'Segoe UI',system-ui,sans-serif}
 a{color:inherit;text-decoration:none}
-
-/* NAV */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-overlay.hidden{display:none}
+.modal{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:12px;padding:28px;width:100%;max-width:380px}
+.modal h2{font-size:1.1rem;font-weight:600;color:#fff;margin-bottom:6px}
+.modal>p{font-size:.82rem;color:#666;margin-bottom:20px}
+.modal .form-row{margin-bottom:12px}
+.modal .form-row label{display:block;font-size:.78rem;color:#666;margin-bottom:5px}
+.modal .form-row input,.modal .form-row textarea,.modal .form-row select{width:100%;background:#121212;border:1px solid #2a2a2a;border-radius:6px;padding:9px 11px;color:#e0e0e0;font-size:.85rem;font-family:inherit;transition:border-color .15s}
+.modal .form-row input:focus,.modal .form-row textarea:focus,.modal .form-row select:focus{outline:none;border-color:#444}
+.modal .form-row textarea{resize:vertical;min-height:80px}
+.modal .form-row select option{background:#1a1a1a}
+.modal-tabs{display:flex;margin-bottom:20px;border:1px solid #2a2a2a;border-radius:7px;overflow:hidden}
+.modal-tab{flex:1;padding:8px;background:transparent;border:none;color:#666;font-size:.82rem;cursor:pointer;transition:all .15s}
+.modal-tab.active{background:#2a2a2a;color:#fff}
+.modal-btn{width:100%;padding:10px;border-radius:7px;background:#2a2a2a;border:1px solid #383838;color:#fff;font-size:.875rem;font-weight:500;cursor:pointer;transition:background .15s;margin-top:4px}
+.modal-btn:hover{background:#333}
+.modal-btn.danger{background:#3d1f1f;border-color:#5a2a2a;color:#f87171}
+.modal-btn.danger:hover{background:#4a2020}
+.modal-err{font-size:.78rem;color:#f87171;margin-top:8px;display:none}
+.modal-err.show{display:block}
 nav{display:flex;align-items:center;justify-content:space-between;padding:14px 28px;border-bottom:1px solid #2a2a2a;background:#121212;position:sticky;top:0;z-index:100}
 .nav-logo{font-size:1rem;font-weight:600;color:#fff}
-.nav-links{display:flex;gap:20px}
-.nav-links a{font-size:.875rem;color:#888;transition:color .15s}
+.nav-links{display:flex;gap:16px;align-items:center}
+.nav-links a{font-size:.875rem;color:#888;transition:color .15s;cursor:pointer}
 .nav-links a:hover{color:#e0e0e0}
-
-/* HERO */
-.hero{padding:56px 28px 36px;max-width:680px}
+.nav-user{display:flex;align-items:center;gap:8px;font-size:.82rem;color:#aaa}
+.nav-username{color:#fff;font-weight:500}
+.owner-badge{background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;font-size:.6rem;font-weight:800;padding:2px 7px;border-radius:3px;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+.nav-logout{font-size:.75rem;color:#555;cursor:pointer;border:1px solid #2a2a2a;padding:3px 9px;border-radius:5px;background:transparent;transition:all .15s}
+.nav-logout:hover{color:#aaa;border-color:#444}
+.hero{padding:40px 28px 28px;max-width:680px}
 .hero h1{font-size:1.9rem;font-weight:600;color:#fff;line-height:1.25;margin-bottom:10px}
 .hero p{font-size:.925rem;color:#888;line-height:1.7}
-
-/* STATS */
-.stats{display:flex;gap:40px;padding:20px 28px;border-top:1px solid #2a2a2a;border-bottom:1px solid #2a2a2a}
+.stats{display:flex;gap:40px;padding:16px 28px;border-top:1px solid #2a2a2a;border-bottom:1px solid #2a2a2a}
 .stat-num{font-size:1.5rem;font-weight:600;color:#fff}
 .stat-label{font-size:.78rem;color:#666;margin-top:2px}
-
-/* FILTER */
-.filter-bar{display:flex;gap:8px;padding:24px 28px 0;flex-wrap:wrap;align-items:center}
+.filter-bar{display:flex;gap:8px;padding:20px 28px 0;flex-wrap:wrap;align-items:center}
 .filter-label{font-size:.82rem;color:#666;margin-right:4px}
 .filter-btn{padding:5px 13px;border-radius:5px;border:1px solid #2a2a2a;background:transparent;color:#888;font-size:.8rem;cursor:pointer;transition:all .15s}
 .filter-btn:hover{border-color:#444;color:#ccc}
 .filter-btn.active{background:#2a2a2a;border-color:#444;color:#fff}
-
-/* PROJECTS GRID */
-.projects{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;padding:24px 28px}
-
+.projects{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;padding:20px 28px}
 .project-card{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:10px;overflow:hidden;display:flex;flex-direction:column;transition:border-color .2s}
 .project-card:hover{border-color:#3a3a3a}
-
-.card-icon{height:90px;display:flex;align-items:center;justify-content:center;font-size:2.2rem;background:#1e1e1e;border-bottom:1px solid #2a2a2a;position:relative}
+.card-icon{height:80px;display:flex;align-items:center;justify-content:center;font-size:2rem;background:#1e1e1e;border-bottom:1px solid #2a2a2a;position:relative}
 .new-badge{position:absolute;top:8px;right:8px;background:#22c55e;color:#fff;font-size:.65rem;font-weight:700;padding:2px 7px;border-radius:3px}
-
 .card-body{padding:14px;flex:1;display:flex;flex-direction:column}
-.card-tags{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px}
+.card-tags{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;align-items:center}
 .tag{font-size:.7rem;padding:2px 7px;border-radius:3px;font-weight:500}
-.tag-exe   {background:#2a1a1a;color:#f87171;border:1px solid #3d1f1f}
-.tag-tool  {background:#1a1f2a;color:#60a5fa;border:1px solid #1f2d3d}
-.tag-game  {background:#1a2a1a;color:#4ade80;border:1px solid #1f3d1f}
-.tag-web   {background:#2a1f1a;color:#fb923c;border:1px solid #3d2a1f}
+.tag-exe{background:#2a1a1a;color:#f87171;border:1px solid #3d1f1f}
+.tag-tool{background:#1a1f2a;color:#60a5fa;border:1px solid #1f2d3d}
+.tag-game{background:#1a2a1a;color:#4ade80;border:1px solid #1f3d1f}
+.tag-web{background:#2a1f1a;color:#fb923c;border:1px solid #3d2a1f}
 .tag-script{background:#221a2a;color:#a78bfa;border:1px solid #321f3d}
-.tag-folder{background:#1a2020;color:#2dd4bf;border:1px solid #1f3535}
+.card-uploader{display:flex;align-items:center;gap:5px;margin-left:auto;font-size:.72rem}
+.card-uploader .u-name{color:#888}
 .card-title{font-size:.95rem;font-weight:600;color:#fff;margin-bottom:5px}
 .card-desc{font-size:.82rem;color:#777;line-height:1.6;flex:1}
-
 .card-footer{display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid #242424}
 .card-meta{font-size:.75rem;color:#555}
-.card-links{display:flex;gap:7px}
+.card-actions{display:flex;gap:6px}
 .dl-btn{display:flex;align-items:center;gap:5px;padding:5px 12px;border-radius:6px;background:#1e1e1e;border:1px solid #2a2a2a;color:#aaa;font-size:.78rem;cursor:pointer;transition:all .15s}
 .dl-btn:hover{border-color:#555;color:#fff}
-
-/* UPLOAD SECTION */
+.edit-btn{display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:6px;background:transparent;border:1px solid #1f2d3d;color:#60a5fa;font-size:.78rem;cursor:pointer;transition:all .15s}
+.edit-btn:hover{background:#1a1f2a}
+.del-btn{display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:6px;background:transparent;border:1px solid #3d1f1f;color:#f87171;font-size:.78rem;cursor:pointer;transition:all .15s}
+.del-btn:hover{background:#2a1a1a}
 .upload-section{margin:8px 28px 28px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:10px;overflow:hidden}
 .upload-header{padding:14px 18px;border-bottom:1px solid #2a2a2a;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none}
 .upload-header h2{font-size:.95rem;font-weight:600;color:#fff}
 .upload-header span{font-size:.8rem;color:#555}
 .upload-body{padding:18px;display:none}
 .upload-body.open{display:block}
-
 .form-row{margin-bottom:13px}
 .form-row label{display:block;font-size:.78rem;color:#666;margin-bottom:5px}
 .form-row input,.form-row textarea,.form-row select{width:100%;background:#121212;border:1px solid #2a2a2a;border-radius:6px;padding:8px 11px;color:#e0e0e0;font-size:.85rem;font-family:inherit;transition:border-color .15s}
 .form-row input:focus,.form-row textarea:focus,.form-row select:focus{outline:none;border-color:#444}
 .form-row textarea{resize:vertical;min-height:70px}
 .form-row select option{background:#1a1a1a}
-
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-
-.upload-mode{display:flex;gap:6px;margin-bottom:14px;align-items:center}
-.mode-btn{padding:5px 14px;border-radius:5px;border:1px solid #2a2a2a;background:transparent;color:#888;font-size:.8rem;cursor:pointer;transition:all .15s}
-.mode-btn:hover{border-color:#444;color:#ccc}
-.mode-btn.active{background:#2a2a2a;border-color:#444;color:#fff}
-
 .drop-zone{border:1px dashed #333;border-radius:7px;padding:28px;text-align:center;cursor:pointer;transition:border-color .15s;position:relative}
 .drop-zone:hover,.drop-zone.drag{border-color:#555}
 .drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
 .drop-zone p{font-size:.82rem;color:#555}
 .drop-zone p span{color:#888}
 .file-name{font-size:.8rem;color:#6ee7b7;margin-top:8px}
-
-.folder-list{margin-top:10px;max-height:140px;overflow-y:auto;background:#161616;border:1px solid #2a2a2a;border-radius:6px;padding:8px 10px}
-.folder-list-item{font-size:.75rem;color:#666;padding:2px 0;font-family:monospace}
-
-.progress-wrap{margin-top:10px;display:none}
-.progress-wrap.visible{display:block}
-.progress-bar-bg{background:#1e1e1e;border-radius:4px;height:6px;overflow:hidden;border:1px solid #2a2a2a}
-.progress-bar-fill{height:100%;background:#22c55e;border-radius:4px;transition:width .2s;width:0%}
-.progress-label{font-size:.75rem;color:#555;margin-top:5px}
-
+.file-size-warn{font-size:.75rem;color:#f87171;margin-top:6px}
 .submit-btn{width:100%;padding:10px;border-radius:7px;background:#2a2a2a;border:1px solid #383838;color:#fff;font-size:.875rem;font-weight:500;cursor:pointer;transition:background .15s;margin-top:4px}
 .submit-btn:hover{background:#333}
 .submit-btn:disabled{opacity:.5;cursor:not-allowed}
-
 .status-msg{margin-top:10px;font-size:.8rem;padding:8px 12px;border-radius:6px;display:none}
 .status-msg.success{background:#1a2a1a;border:1px solid #1f3d1f;color:#4ade80;display:block}
 .status-msg.error{background:#2a1a1a;border:1px solid #3d1f1f;color:#f87171;display:block}
 .status-msg.loading{background:#1e1e1e;border:1px solid #2a2a2a;color:#888;display:block}
-
-/* TOKEN INPUT */
-.token-bar{background:#161616;border-bottom:1px solid #2a2a2a;padding:10px 28px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.token-bar label{font-size:.78rem;color:#555;white-space:nowrap}
-.token-bar input{flex:1;min-width:160px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:5px;padding:6px 10px;color:#e0e0e0;font-size:.8rem;font-family:monospace}
-.token-bar input:focus{outline:none;border-color:#444}
-.token-status{font-size:.75rem}
-.token-status.ok{color:#4ade80}
-.token-status.bad{color:#f87171}
-.verify-btn{padding:5px 12px;border-radius:5px;border:1px solid #2a2a2a;background:transparent;color:#888;font-size:.78rem;cursor:pointer;transition:all .15s;white-space:nowrap}
-.verify-btn:hover{border-color:#444;color:#ccc}
-
-footer{text-align:center;padding:28px;border-top:1px solid #2a2a2a;color:#444;font-size:.82rem;margin-top:8px}
+.size-note{font-size:.75rem;color:#555;margin-top:6px;line-height:1.5}
+.login-prompt{font-size:.82rem;color:#555;padding:12px 14px;background:#161616;border:1px solid #222;border-radius:7px;margin-bottom:14px}
+.login-prompt a{color:#60a5fa;cursor:pointer}
+footer{text-align:center;padding:24px;border-top:1px solid #2a2a2a;color:#444;font-size:.82rem;margin-top:8px}
 </style>
 </head>
 <body>
 
+<!-- AUTH MODAL -->
+<div class="modal-overlay hidden" id="auth-modal">
+  <div class="modal">
+    <h2>Welcome to Glitch Viruses</h2>
+    <p>Sign in or create an account to upload projects.</p>
+    <div class="modal-tabs">
+      <button class="modal-tab active" onclick="switchTab('login')">Sign In</button>
+      <button class="modal-tab" onclick="switchTab('register')">Register</button>
+    </div>
+    <div id="tab-login">
+      <div class="form-row"><label>Username</label><input type="text" id="login-user" placeholder="username"></div>
+      <div class="form-row"><label>Password</label><input type="password" id="login-pass" placeholder="••••••••"></div>
+      <button class="modal-btn" onclick="doLogin()">Sign In</button>
+      <div class="modal-err" id="login-err"></div>
+    </div>
+    <div id="tab-register" style="display:none">
+      <div class="form-row"><label>Username</label><input type="text" id="reg-user" placeholder="username"></div>
+      <div class="form-row"><label>Password</label><input type="password" id="reg-pass" placeholder="••••••••"></div>
+      <button class="modal-btn" onclick="doRegister()">Create Account</button>
+      <div class="modal-err" id="reg-err"></div>
+    </div>
+    <p style="margin-top:14px;font-size:.75rem;color:#444;text-align:center">Or <a style="color:#60a5fa;cursor:pointer" onclick="browseAsGuest()">browse as guest</a></p>
+  </div>
+</div>
+
+<!-- EDIT MODAL (owner only) -->
+<div class="modal-overlay hidden" id="edit-modal">
+  <div class="modal">
+    <h2>✏️ Edit Project</h2>
+    <p>Modify this project's details.</p>
+    <div class="form-row"><label>Project name</label><input type="text" id="edit-name" placeholder="My Tool"></div>
+    <div class="form-row">
+      <label>Type</label>
+      <select id="edit-type">
+        <option value="exe">EXE</option>
+        <option value="tool">Tool</option>
+        <option value="game">Game</option>
+        <option value="script">Script</option>
+        <option value="web">Web</option>
+      </select>
+    </div>
+    <div class="form-row"><label>Description</label><textarea id="edit-desc" placeholder="What does it do?"></textarea></div>
+    <button class="modal-btn" onclick="saveEdit()">Save Changes</button>
+    <button class="modal-btn danger" style="margin-top:8px" onclick="closeEditModal()">Cancel</button>
+    <div class="modal-err" id="edit-err"></div>
+  </div>
+</div>
+
 <nav>
   <div class="nav-logo">Glitch Viruses</div>
   <div class="nav-links">
-    <a href="#projects">Projects</a>
-    <a href="#upload">Upload</a>
-    <a href="https://github.com/FortheLolzahaha-alt/Glitch-Viruses" target="_blank">GitHub</a>
+    <a onclick="document.getElementById('projects-section').scrollIntoView({behavior:'smooth'})">Projects</a>
+    <a onclick="openUpload()">Upload</a>
+    <div class="nav-user" id="nav-user-area" style="display:none">
+      <span class="nav-username" id="nav-username"></span>
+      <span class="owner-badge" id="nav-owner-badge" style="display:none">👑 Owner</span>
+      <button class="nav-logout" onclick="doLogout()">logout</button>
+    </div>
+    <a id="nav-signin-btn" onclick="showAuthModal()">Sign in</a>
   </div>
 </nav>
 
-<!-- TOKEN BAR (only needed for uploading) -->
-<div class="token-bar">
-  <label>GitHub Token (uploaders only):</label>
-  <input type="password" id="gh-token" placeholder="ghp_... (only needed to upload)">
-  <button class="verify-btn" onclick="verifyToken()">Verify</button>
-  <span class="token-status" id="token-status"></span>
-</div>
-
-<!-- HERO -->
 <div class="hero">
   <h1>Glitch Viruses</h1>
-  <p>A collection of tools, executables, games, and scripts. Download, explore, or upload your own.</p>
+  <p>A collection of tools, executables, games, and scripts. Upload your own — projects are shared with everyone.</p>
 </div>
 
-<!-- STATS -->
 <div class="stats">
   <div><div class="stat-num" id="proj-count">0</div><div class="stat-label">Projects</div></div>
-  <div><div class="stat-num" id="dl-count">0</div><div class="stat-label">Downloads</div></div>
+  <div><div class="stat-num" id="file-count">0</div><div class="stat-label">Files stored</div></div>
 </div>
 
-<!-- FILTER -->
-<div class="filter-bar" id="projects">
+<div class="filter-bar" id="projects-section">
   <span class="filter-label">Filter:</span>
   <button class="filter-btn active" data-filter="all">All</button>
   <button class="filter-btn" data-filter="exe">EXE</button>
@@ -161,442 +190,325 @@ footer{text-align:center;padding:28px;border-top:1px solid #2a2a2a;color:#444;fo
   <button class="filter-btn" data-filter="game">Game</button>
   <button class="filter-btn" data-filter="script">Script</button>
   <button class="filter-btn" data-filter="web">Web</button>
-  <button class="filter-btn" data-filter="folder">Folder</button>
 </div>
 
-<!-- PROJECTS GRID -->
 <div class="projects" id="projects-grid">
-  <div style="grid-column:1/-1;text-align:center;padding:40px;color:#444;font-size:.9rem">Loading projects…</div>
+  <div style="grid-column:1/-1;text-align:center;padding:40px;color:#444;font-size:.9rem">Loading…</div>
 </div>
 
-<!-- UPLOAD -->
-<div class="upload-section" id="upload">
+<div class="upload-section" id="upload-section">
   <div class="upload-header" onclick="toggleUpload()">
     <h2>Upload a project</h2>
     <span id="upload-toggle-label">▼ expand</span>
   </div>
   <div class="upload-body" id="upload-body">
-
-    <div class="upload-mode">
-      <span style="font-size:.78rem;color:#666;margin-right:4px">Upload type:</span>
-      <button class="mode-btn active" id="mode-file-btn" onclick="setMode('file')">📄 Single File</button>
-      <button class="mode-btn" id="mode-folder-btn" onclick="setMode('folder')">📁 Folder</button>
+    <div id="upload-login-prompt" class="login-prompt" style="display:none">
+      You need to <a onclick="showAuthModal()">sign in</a> to upload projects.
     </div>
-
-    <div class="form-grid">
+    <div id="upload-form" style="display:none">
+      <div class="form-grid">
+        <div class="form-row"><label>Project name *</label><input type="text" id="up-name" placeholder="My Tool"></div>
+        <div class="form-row">
+          <label>Type *</label>
+          <select id="up-type">
+            <option value="exe">EXE</option>
+            <option value="tool">Tool</option>
+            <option value="game">Game</option>
+            <option value="script">Script</option>
+            <option value="web">Web</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row"><label>Description *</label><textarea id="up-desc" placeholder="What does it do?"></textarea></div>
       <div class="form-row">
-        <label>Project name *</label>
-        <input type="text" id="up-name" placeholder="My Tool">
+        <label>File (optional — keep under ~300 KB)</label>
+        <div class="drop-zone" id="drop-zone">
+          <input type="file" id="up-file" onchange="onFileChange(this)">
+          <p>Drop file here or <span>click to browse</span></p>
+          <div class="file-name" id="file-name-display"></div>
+          <div class="file-size-warn" id="file-size-warn"></div>
+        </div>
+        <div class="size-note">Files are stored as base64 in JSONBin. Keep under ~300 KB, or paste a download link in the description instead.</div>
       </div>
-      <div class="form-row">
-        <label>Type *</label>
-        <select id="up-type">
-          <option value="exe">EXE</option>
-          <option value="tool">Tool</option>
-          <option value="game">Game</option>
-          <option value="script">Script</option>
-          <option value="web">Web</option>
-          <option value="folder">Folder</option>
-        </select>
-      </div>
+      <button class="submit-btn" id="submit-btn" onclick="uploadProject()">Save Project</button>
+      <div class="status-msg" id="status-msg"></div>
     </div>
-    <div class="form-row">
-      <label>Description *</label>
-      <textarea id="up-desc" placeholder="What does it do?"></textarea>
-    </div>
-
-    <!-- Single file drop zone -->
-    <div class="form-row" id="file-zone">
-      <label>File *</label>
-      <div class="drop-zone" id="drop-zone">
-        <input type="file" id="up-file" onchange="onFileChange(this)">
-        <p>Drop file here or <span>click to browse</span></p>
-        <div class="file-name" id="file-name-display"></div>
-      </div>
-    </div>
-
-    <!-- Folder drop zone -->
-    <div class="form-row" id="folder-zone" style="display:none">
-      <label>Folder *</label>
-      <div class="drop-zone" id="folder-drop-zone">
-        <input type="file" id="up-folder" webkitdirectory multiple onchange="onFolderChange(this)">
-        <p>Drop folder here or <span>click to browse</span></p>
-        <div class="file-name" id="folder-name-display"></div>
-      </div>
-      <div class="folder-list" id="folder-file-list" style="display:none"></div>
-    </div>
-
-    <div class="progress-wrap" id="progress-wrap">
-      <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-fill"></div></div>
-      <div class="progress-label" id="progress-label">Uploading…</div>
-    </div>
-
-    <button class="submit-btn" id="submit-btn" onclick="uploadProject()">Upload to GitHub</button>
-    <div class="status-msg" id="status-msg"></div>
   </div>
 </div>
 
-<footer>
-  Glitch Viruses · <a href="https://github.com/FortheLolzahaha-alt/Glitch-Viruses" target="_blank" style="color:#555">GitHub</a>
-</footer>
+<footer>Glitch Viruses · powered by JSONBin.io</footer>
 
 <script>
-const OWNER = 'FortheLolzahaha-alt';
-const REPO  = 'Glitch-Viruses';
-const META  = 'projects.json';
+const JSONBIN_BIN_ID  = '69fe3485adc21f119a71d41a';
+const JSONBIN_API_KEY = '$2a$10$HDjJOu1Pd8zpFRbHxnjJMuokZPID/j6T7TmAkjuZpbfwcM98eVnlO';
+const BIN_URL         = `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`;
 
-let projects = [];
-let selectedFile = null;
-let selectedFolderFiles = [];
-let uploadMode = 'file';
+const USERS_KEY   = 'glitch-viruses-users';
+const SESSION_KEY = 'glitch-viruses-session';
+const OWNER_NAME  = 'Glitch';
+const ICONS       = {exe:'⚙️',tool:'🛠️',game:'🎮',script:'📜',web:'🌐'};
+const TYPE_LABEL  = {exe:'EXE',tool:'Tool',game:'Game',script:'Script',web:'Web'};
 
-// Each folder file gets a stored relative path we control
-// We store it separately so we don't fight with read-only webkitRelativePath
-let folderFilePaths = [];
+let projects        = [];
+let selectedFile    = null;
+let selectedFileB64 = null;
+let currentFilter   = 'all';
+let currentUser     = null;
+let isSaving        = false;
+let editingId       = null;
 
-function getToken() { return document.getElementById('gh-token').value.trim(); }
+function esc(s){const d=document.createElement('div');d.textContent=s||'';return d.innerHTML;}
+function isOwner(u){return u&&u.toLowerCase()===OWNER_NAME.toLowerCase();}
+function setStatus(msg,type){const el=document.getElementById('status-msg');el.textContent=msg;el.className='status-msg '+type;}
 
-function ghHeaders(withAuth = false) {
-  const h = { 'Accept': 'application/vnd.github.v3+json' };
-  if (withAuth && getToken()) h['Authorization'] = 'token ' + getToken();
-  return h;
+/* ── users ── */
+function getUsers(){try{return JSON.parse(localStorage.getItem(USERS_KEY)||'{}')}catch(e){return{}}}
+function saveUsers(u){localStorage.setItem(USERS_KEY,JSON.stringify(u));}
+
+/* ── session ── */
+function saveSession(u){localStorage.setItem(SESSION_KEY,u);}
+function clearSession(){localStorage.removeItem(SESSION_KEY);}
+function loadSession(){
+  const u=localStorage.getItem(SESSION_KEY);
+  currentUser=u?{username:u}:null;
+  applySession();
+}
+function applySession(){
+  const area=document.getElementById('nav-user-area');
+  const signinBtn=document.getElementById('nav-signin-btn');
+  const badge=document.getElementById('nav-owner-badge');
+  document.getElementById('nav-username').textContent=currentUser?currentUser.username:'';
+  if(currentUser){
+    area.style.display='flex';signinBtn.style.display='none';
+    badge.style.display=isOwner(currentUser.username)?'inline':'none';
+  } else {
+    area.style.display='none';signinBtn.style.display='inline';
+  }
+  document.getElementById('upload-login-prompt').style.display=currentUser?'none':'block';
+  document.getElementById('upload-form').style.display=currentUser?'block':'none';
 }
 
-async function ghGet(path) {
-  return fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${path}`,
-    { headers: ghHeaders(false) });
+/* ── auth modal ── */
+function showAuthModal(){document.getElementById('auth-modal').classList.remove('hidden');}
+function hideAuthModal(){document.getElementById('auth-modal').classList.add('hidden');}
+function browseAsGuest(){hideAuthModal();}
+function switchTab(tab){
+  document.querySelectorAll('.modal-tab').forEach((b,i)=>b.classList.toggle('active',(i===0&&tab==='login')||(i===1&&tab==='register')));
+  document.getElementById('tab-login').style.display=tab==='login'?'block':'none';
+  document.getElementById('tab-register').style.display=tab==='register'?'block':'none';
+}
+function showErr(id,msg){const el=document.getElementById(id);el.textContent=msg;el.classList.add('show');}
+function clearErr(id){const el=document.getElementById(id);el.textContent='';el.classList.remove('show');}
+
+function doLogin(){
+  clearErr('login-err');
+  const username=document.getElementById('login-user').value.trim();
+  const password=document.getElementById('login-pass').value;
+  if(!username||!password){showErr('login-err','Fill in all fields.');return;}
+  const users=getUsers(),key=username.toLowerCase();
+  if(!users[key]){showErr('login-err','Account not found.');return;}
+  if(users[key].password!==btoa(password)){showErr('login-err','Wrong password.');return;}
+  currentUser={username:users[key].displayName};
+  saveSession(currentUser.username);applySession();hideAuthModal();renderGrid(currentFilter);
+}
+function doRegister(){
+  clearErr('reg-err');
+  const username=document.getElementById('reg-user').value.trim();
+  const password=document.getElementById('reg-pass').value;
+  if(!username||!password){showErr('reg-err','Fill in all fields.');return;}
+  if(username.length<2){showErr('reg-err','Username too short.');return;}
+  if(password.length<4){showErr('reg-err','Password must be 4+ chars.');return;}
+  const users=getUsers();
+  if(users[username.toLowerCase()]){showErr('reg-err','Username taken.');return;}
+  users[username.toLowerCase()]={displayName:username,password:btoa(password)};
+  saveUsers(users);currentUser={username};saveSession(username);applySession();hideAuthModal();renderGrid(currentFilter);
+}
+function doLogout(){currentUser=null;clearSession();applySession();renderGrid(currentFilter);}
+
+/* ── edit modal ── */
+function openEditModal(id){
+  const p=projects.find(x=>x.id===id);if(!p)return;
+  editingId=id;
+  document.getElementById('edit-name').value=p.name;
+  document.getElementById('edit-type').value=p.type;
+  document.getElementById('edit-desc').value=p.desc;
+  clearErr('edit-err');
+  document.getElementById('edit-modal').classList.remove('hidden');
+}
+function closeEditModal(){document.getElementById('edit-modal').classList.add('hidden');editingId=null;}
+
+async function saveEdit(){
+  const name=document.getElementById('edit-name').value.trim();
+  const type=document.getElementById('edit-type').value;
+  const desc=document.getElementById('edit-desc').value.trim();
+  if(!name||!desc){showErr('edit-err','Name and description are required.');return;}
+  if(isSaving){showErr('edit-err','Another save is in progress.');return;}
+  isSaving=true;
+  try{
+    const fresh=await fetchLatest();
+    if(fresh)projects=fresh;
+    const idx=projects.findIndex(x=>x.id===editingId);
+    if(idx===-1){showErr('edit-err','Project not found.');isSaving=false;return;}
+    projects[idx]={...projects[idx],name,type,desc,editedAt:Date.now()};
+    await persistProjects();
+    renderGrid(currentFilter);
+    closeEditModal();
+  }catch(e){showErr('edit-err','Save failed: '+e.message);}
+  isSaving=false;
 }
 
-async function ghPut(path, content64, message, sha) {
-  const body = { message, content: content64 };
-  if (sha) body.sha = sha;
-  return fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${path}`, {
-    method: 'PUT',
-    headers: { ...ghHeaders(true), 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  });
+/* ── JSONBin ── */
+async function fetchLatest(){
+  const r=await fetch(BIN_URL+'/latest',{headers:{'X-Master-Key':JSONBIN_API_KEY,'X-Bin-Meta':false}});
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  const d=await r.json();
+  return Array.isArray(d)?d:(Array.isArray(d.record)?d.record:[]);
 }
 
-function b64(str) { return btoa(unescape(encodeURIComponent(str))); }
-
-async function fileToB64(file) {
-  return new Promise((res, rej) => {
-    const fr = new FileReader();
-    fr.onload = () => res(fr.result.split(',')[1]);
-    fr.onerror = rej;
-    fr.readAsDataURL(file);
-  });
-}
-
-// ── Token verify ──────────────────────────────────────────────────────────────
-async function verifyToken() {
-  const statusEl = document.getElementById('token-status');
-  if (!getToken()) { statusEl.textContent = '✗ No token'; statusEl.className = 'token-status bad'; return; }
-  statusEl.textContent = 'Checking…'; statusEl.className = 'token-status';
-  try {
-    const r = await fetch('https://api.github.com/user', { headers: ghHeaders(true) });
-    if (r.ok) {
-      const d = await r.json();
-      statusEl.textContent = `✓ Logged in as ${d.login}`;
-      statusEl.className = 'token-status ok';
-    } else {
-      statusEl.textContent = '✗ Bad credentials';
-      statusEl.className = 'token-status bad';
-    }
-  } catch(e) {
-    statusEl.textContent = '✗ Network error';
-    statusEl.className = 'token-status bad';
+async function fetchProjects(){
+  try{
+    projects=await fetchLatest();
+    renderGrid(currentFilter);
+  }catch(e){
+    console.error(e);
+    document.getElementById('projects-grid').innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:40px;color:#f87171;font-size:.9rem">Could not load projects: ${e.message}</div>`;
   }
 }
 
-// ── Upload mode ───────────────────────────────────────────────────────────────
-function setMode(mode) {
-  uploadMode = mode;
-  document.getElementById('file-zone').style.display   = mode === 'file'   ? '' : 'none';
-  document.getElementById('folder-zone').style.display = mode === 'folder' ? '' : 'none';
-  document.getElementById('mode-file-btn').classList.toggle('active', mode === 'file');
-  document.getElementById('mode-folder-btn').classList.toggle('active', mode === 'folder');
-  if (mode === 'folder') document.getElementById('up-type').value = 'folder';
+async function persistProjects(){
+  const r=await fetch(BIN_URL,{
+    method:'PUT',
+    headers:{'Content-Type':'application/json','X-Master-Key':JSONBIN_API_KEY},
+    body:JSON.stringify(projects)
+  });
+  if(!r.ok){const t=await r.text();throw new Error('HTTP '+r.status+': '+t);}
 }
 
-// ── Load projects ─────────────────────────────────────────────────────────────
-async function loadProjects() {
-  const grid = document.getElementById('projects-grid');
-  grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:#444;font-size:.9rem">Loading projects…</div>`;
-  try {
-    const r = await ghGet(META);
-    if (r.status === 404) { projects = []; renderGrid(); return; }
-    if (!r.ok) {
-      grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:#f87171;font-size:.85rem">Could not load projects. Make sure the repo is public.</div>`;
-      return;
-    }
-    const data = await r.json();
-    projects = JSON.parse(atob(data.content.replace(/\n/g, '')));
-  } catch(e) { projects = []; }
-  renderGrid();
-}
-
-const ICONS = { exe:'⚙️', tool:'🛠️', game:'🎮', script:'📜', web:'🌐', folder:'📁' };
-const TYPE_LABEL = { exe:'EXE', tool:'Tool', game:'Game', script:'Script', web:'Web', folder:'Folder' };
-
-function renderGrid(filter = 'all') {
-  const grid = document.getElementById('projects-grid');
-  const visible = filter === 'all' ? projects : projects.filter(p => p.type === filter);
-  document.getElementById('proj-count').textContent = projects.length;
-  document.getElementById('dl-count').textContent = projects.reduce((s,p)=>s+(p.downloads||0),0).toLocaleString();
-  if (!visible.length) {
-    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:#444;font-size:.9rem">No projects yet — upload one below!</div>`;
+/* ── render ── */
+function renderGrid(filter='all'){
+  currentFilter=filter;
+  const grid=document.getElementById('projects-grid');
+  const visible=filter==='all'?projects:projects.filter(p=>p.type===filter);
+  document.getElementById('proj-count').textContent=projects.length;
+  document.getElementById('file-count').textContent=projects.filter(p=>p.fileB64).length;
+  if(!visible.length){
+    grid.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:40px;color:#444;font-size:.9rem">${projects.length?'No projects match this filter.':'No projects yet — upload one below!'}</div>`;
     return;
   }
-  grid.innerHTML = visible.map((p, i) => `
-    <div class="project-card">
-      <div class="card-icon">${ICONS[p.type]||'📦'}${i===0?'<span class="new-badge">NEW</span>':''}</div>
+  grid.innerHTML=visible.map((p,i)=>{
+    const ownerUp=isOwner(p.uploader);
+    const uploaderHTML=p.uploader
+      ?`<span class="card-uploader"><span class="u-name">${esc(p.uploader)}</span>${ownerUp?`<span class="owner-badge" style="font-size:.55rem;padding:1px 5px">👑</span>`:''}</span>`:'';
+    const canDel=currentUser&&(currentUser.username===p.uploader||isOwner(currentUser.username));
+    const canEdit=currentUser&&isOwner(currentUser.username);
+    return`<div class="project-card">
+      <div class="card-icon">${ICONS[p.type]||'📦'}${i===0&&filter==='all'?'<span class="new-badge">NEW</span>':''}</div>
       <div class="card-body">
-        <div class="card-tags">
-          <span class="tag tag-${p.type}">${TYPE_LABEL[p.type]||p.type}</span>
-          ${p.fileCount ? `<span class="tag tag-folder">${p.fileCount} files</span>` : ''}
-        </div>
+        <div class="card-tags"><span class="tag tag-${p.type}">${TYPE_LABEL[p.type]||p.type}</span>${uploaderHTML}</div>
         <div class="card-title">${esc(p.name)}</div>
         <div class="card-desc">${esc(p.desc)}</div>
         <div class="card-footer">
           <span class="card-meta">${p.date||''}</span>
-          <div class="card-links">
-            ${p.folderUrl
-              ? `<a href="${p.folderUrl}" class="dl-btn" target="_blank">📁 Browse on GitHub</a>`
-              : p.fileUrl
-                ? `<a href="${p.fileUrl}" class="dl-btn" target="_blank" download>⬇ Download</a>`
-                : '<span class="card-meta">No file</span>'
-            }
+          <div class="card-actions">
+            ${p.fileB64?`<button class="dl-btn" onclick="downloadFile('${p.id}')">⬇ Download</button>`:''}
+            ${canEdit?`<button class="edit-btn" onclick="openEditModal('${p.id}')">✏️</button>`:''}
+            ${canDel?`<button class="del-btn" onclick="deleteProject('${p.id}')">✕</button>`:''}
           </div>
         </div>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
-function esc(s){ const d=document.createElement('div');d.textContent=s||'';return d.innerHTML; }
+function downloadFile(id){
+  const p=projects.find(x=>x.id===id);if(!p||!p.fileB64)return;
+  const a=document.createElement('a');a.href='data:'+p.fileMime+';base64,'+p.fileB64;a.download=p.fileName||p.name;a.click();
+}
 
-// ── Filters ───────────────────────────────────────────────────────────────────
-document.querySelectorAll('.filter-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
+async function deleteProject(id){
+  if(!confirm('Delete this project?'))return;
+  if(isSaving){alert('Another save is in progress, try again shortly.');return;}
+  isSaving=true;
+  try{
+    const fresh=await fetchLatest();if(fresh)projects=fresh;
+    projects=projects.filter(p=>p.id!==id);
+    await persistProjects();renderGrid(currentFilter);
+  }catch(e){setStatus('Delete failed: '+e.message,'error');}
+  isSaving=false;
+}
+
+/* ── upload ── */
+document.querySelectorAll('.filter-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
     document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    renderGrid(btn.dataset.filter);
+    btn.classList.add('active');renderGrid(btn.dataset.filter);
   });
 });
-
-// ── Upload toggle ─────────────────────────────────────────────────────────────
-function toggleUpload() {
-  const body = document.getElementById('upload-body');
-  const lbl  = document.getElementById('upload-toggle-label');
-  lbl.textContent = body.classList.toggle('open') ? '▲ collapse' : '▼ expand';
+function toggleUpload(){
+  const body=document.getElementById('upload-body'),lbl=document.getElementById('upload-toggle-label');
+  lbl.textContent=body.classList.toggle('open')?'▲ collapse':'▼ expand';
 }
-
-// ── File picker (single file) ─────────────────────────────────────────────────
-function onFileChange(input) {
-  selectedFile = input.files[0] || null;
-  document.getElementById('file-name-display').textContent = selectedFile ? selectedFile.name : '';
+function openUpload(){
+  document.getElementById('upload-section').scrollIntoView({behavior:'smooth'});
+  const body=document.getElementById('upload-body');
+  if(!body.classList.contains('open')){body.classList.add('open');document.getElementById('upload-toggle-label').textContent='▲ collapse';}
 }
-
-// ── File picker (folder via input) ───────────────────────────────────────────
-function onFolderChange(input) {
-  selectedFolderFiles = Array.from(input.files);
-  folderFilePaths = selectedFolderFiles.map(f => f.webkitRelativePath || f.name);
-  const display = document.getElementById('folder-name-display');
-  const listEl  = document.getElementById('folder-file-list');
-  if (!selectedFolderFiles.length) { display.textContent=''; listEl.style.display='none'; return; }
-  const folderName = folderFilePaths[0].split('/')[0];
-  display.textContent = `📁 ${folderName} (${selectedFolderFiles.length} files)`;
-  listEl.style.display = 'block';
-  listEl.innerHTML = folderFilePaths.slice(0,60).map(p=>
-    `<div class="folder-list-item">${esc(p)}</div>`
-  ).join('') + (selectedFolderFiles.length>60 ? `<div style="font-size:.75rem;color:#555;padding:4px 0">…and ${selectedFolderFiles.length-60} more</div>` : '');
+function onFileChange(input){
+  const file=input.files[0];if(!file){selectedFile=null;selectedFileB64=null;return;}
+  document.getElementById('file-size-warn').textContent=file.size>300*1024?'⚠ File may be too large.':'';
+  selectedFile=file;
+  document.getElementById('file-name-display').textContent=file.name+' ('+Math.round(file.size/1024)+' KB)';
+  const fr=new FileReader();fr.onload=()=>{selectedFileB64=fr.result.split(',')[1];};fr.readAsDataURL(file);
 }
-
-// ── Drag-drop single file ─────────────────────────────────────────────────────
-const dz = document.getElementById('drop-zone');
-dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag')});
+const dz=document.getElementById('drop-zone');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag');});
 dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));
 dz.addEventListener('drop',e=>{
   e.preventDefault();dz.classList.remove('drag');
-  const f=e.dataTransfer.files[0];
-  if(f){selectedFile=f;document.getElementById('file-name-display').textContent=f.name;}
+  const f=e.dataTransfer.files[0];if(!f)return;
+  selectedFile=f;
+  document.getElementById('file-name-display').textContent=f.name+' ('+Math.round(f.size/1024)+' KB)';
+  document.getElementById('file-size-warn').textContent=f.size>300*1024?'⚠ File may be too large.':'';
+  const fr=new FileReader();fr.onload=()=>{selectedFileB64=fr.result.split(',')[1];};fr.readAsDataURL(f);
 });
 
-// ── Drag-drop folder ──────────────────────────────────────────────────────────
-const fdz = document.getElementById('folder-drop-zone');
-fdz.addEventListener('dragover',e=>{e.preventDefault();fdz.classList.add('drag')});
-fdz.addEventListener('dragleave',()=>fdz.classList.remove('drag'));
-fdz.addEventListener('drop',async e=>{
-  e.preventDefault();fdz.classList.remove('drag');
-  const items = Array.from(e.dataTransfer.items);
-  const files = [];
-  const paths = [];
-
-  // FIX: traverse now receives an explicit path string we fully control,
-  // so there's no ambiguity about what to strip later in uploadProject.
-  async function traverse(entry, path) {
-    if (entry.isFile) {
-      await new Promise(res => entry.file(f => {
-        files.push(f);
-        paths.push(path + f.name);
-        res();
-      }));
-    } else if (entry.isDirectory) {
-      const reader = entry.createReader();
-      await new Promise(res => reader.readEntries(async entries => {
-        for (const ent of entries) await traverse(ent, path + entry.name + '/');
-        res();
-      }));
-    }
-  }
-
-  for (const item of items) {
-    const entry = item.webkitGetAsEntry();
-    if (entry) {
-      // Pass empty path for top-level entries; traverse will build paths like
-      // "FolderName/sub/file.exe" or just "file.exe" for bare files.
-      await traverse(entry, '');
-    }
-  }
-
-  if (files.length) {
-    selectedFolderFiles = files;
-    folderFilePaths = paths;
-    const display = document.getElementById('folder-name-display');
-    const listEl  = document.getElementById('folder-file-list');
-    // Derive a display name from the first path
-    const firstName = paths[0] || '';
-    const displayName = firstName.includes('/') ? firstName.split('/')[0] : 'dropped';
-    display.textContent = `📁 ${displayName} (${files.length} files)`;
-    listEl.style.display = 'block';
-    listEl.innerHTML = paths.slice(0,60).map(p =>
-      `<div class="folder-list-item">${esc(p)}</div>`
-    ).join('') + (paths.length>60 ? `<div style="font-size:.75rem;color:#555;padding:4px 0">…and ${paths.length-60} more</div>` : '');
-  }
-});
-
-// ── Progress ──────────────────────────────────────────────────────────────────
-function setProgress(pct,label){
-  document.getElementById('progress-wrap').classList.add('visible');
-  document.getElementById('progress-fill').style.width=pct+'%';
-  document.getElementById('progress-label').textContent=label;
-}
-function hideProgress(){
-  document.getElementById('progress-wrap').classList.remove('visible');
-  document.getElementById('progress-fill').style.width='0%';
-}
-
-function setStatus(msg,type){
-  const el=document.getElementById('status-msg');
-  el.textContent=msg;el.className='status-msg '+type;
-}
-
-// ── Upload ────────────────────────────────────────────────────────────────────
 async function uploadProject(){
+  if(!currentUser){showAuthModal();return;}
+  if(isSaving){setStatus('A save is in progress, please wait…','loading');return;}
   const name=document.getElementById('up-name').value.trim();
   const type=document.getElementById('up-type').value;
   const desc=document.getElementById('up-desc').value.trim();
-
   if(!name||!desc){setStatus('Please fill in name and description.','error');return;}
-  if(!getToken()){setStatus('Enter your GitHub token above to upload.','error');return;}
-  if(uploadMode==='file'&&!selectedFile){setStatus('Please select a file.','error');return;}
-  if(uploadMode==='folder'&&!selectedFolderFiles.length){setStatus('Please select a folder.','error');return;}
-
   const btn=document.getElementById('submit-btn');
-  btn.disabled=true;
-  hideProgress();
-
+  btn.disabled=true;isSaving=true;setStatus('Saving to the cloud…','loading');
   try{
-    const ts=Date.now();
-    let entry;
-
-    if(uploadMode==='file'){
-      setStatus('Uploading file…','loading');
-      setProgress(10,'Uploading file…');
-      const filePath=`files/${ts}_${selectedFile.name.replace(/\s+/g,'_')}`;
-      const fileB64=await fileToB64(selectedFile);
-      const fr=await ghPut(filePath,fileB64,`Add file: ${name}`,null);
-      if(!fr.ok){const e=await fr.json();throw new Error(e.message||'File upload failed');}
-      const frData=await fr.json();
-      setProgress(80,'Saving metadata…');
-      entry={name,type,desc,fileUrl:frData.content.download_url,
-        date:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}),downloads:0};
-
-    }else{
-      // FIX: determine the root folder name from our controlled folderFilePaths array.
-      // If paths look like "FolderName/..." we use that as the base display name.
-      // If they're bare filenames (single files dropped), we just use a timestamp folder.
-      const firstPath = folderFilePaths[0] || '';
-      const hasRootFolder = firstPath.includes('/');
-      const rootFolderName = hasRootFolder ? firstPath.split('/')[0] : '';
-      const baseFolderLabel = rootFolderName || `folder_${ts}`;
-      const basePath = `files/${ts}_${baseFolderLabel.replace(/\s+/g,'_')}`;
-      const total = selectedFolderFiles.length;
-
-      for(let i=0;i<total;i++){
-        const file = selectedFolderFiles[i];
-        const fullPath = folderFilePaths[i] || file.name;
-
-        // FIX: strip the root folder prefix if it exists, keeping subpaths intact.
-        // e.g. "MyFolder/sub/lol.exe" → "sub/lol.exe"
-        //      "lol.exe"              → "lol.exe"
-        //      "MyFolder/lol.exe"     → "lol.exe"
-        let innerPath;
-        if (rootFolderName && fullPath.startsWith(rootFolderName + '/')) {
-          innerPath = fullPath.slice(rootFolderName.length + 1);
-        } else {
-          innerPath = fullPath;
-        }
-
-        // Guard: innerPath must never be empty
-        if (!innerPath) innerPath = file.name;
-
-        const ghPath = `${basePath}/${innerPath}`;
-        const fileB64 = await fileToB64(file);
-        setProgress(Math.round(10+(i/total)*75),`Uploading ${i+1}/${total}: ${file.name}`);
-        setStatus(`Uploading folder (${i+1}/${total})…`,'loading');
-        const fr = await ghPut(ghPath,fileB64,`Add: ${innerPath}`,null);
-        if(!fr.ok){const e=await fr.json();throw new Error(`"${innerPath}": ${e.message}`);}
-      }
-
-      setProgress(88,'Saving metadata…');
-      entry={name,type:type||'folder',desc,
-        folderUrl:`https://github.com/${OWNER}/${REPO}/tree/main/${basePath}`,
-        fileCount:total,
-        date:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}),downloads:0};
-    }
-
-    // Save projects.json
-    setStatus('Saving project info…','loading');
-    let metaSha=null;
-    try{
-      const mr=await ghGet(META);
-      if(mr.ok){const md=await mr.json();metaSha=md.sha;projects=JSON.parse(atob(md.content.replace(/\n/g,'')));}
-    }catch(e){}
+    const fresh=await fetchLatest();if(fresh)projects=fresh;
+    const entry={
+      id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+      name,type,desc,uploader:currentUser.username,
+      date:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}),
+      createdAt:Date.now(),
+      fileB64:selectedFileB64||null,
+      fileName:selectedFile?selectedFile.name:null,
+      fileMime:selectedFile?selectedFile.type||'application/octet-stream':null,
+    };
     projects.unshift(entry);
-    const mr2=await ghPut(META,b64(JSON.stringify(projects,null,2)),`Add project: ${name}`,metaSha);
-    if(!mr2.ok){const e=await mr2.json();throw new Error(e.message||'Meta save failed');}
-
-    setProgress(100,'Done!');
-    setStatus(uploadMode==='folder'?`Folder uploaded (${entry.fileCount} files)!`:'Project uploaded!','success');
-    renderGrid();
-    ['up-name','up-desc'].forEach(id=>document.getElementById(id).value='');
-    ['file-name-display','folder-name-display'].forEach(id=>document.getElementById(id).textContent='');
-    document.getElementById('folder-file-list').style.display='none';
+    await persistProjects();
+    setStatus('Saved! Everyone can see it now. 🎉','success');
+    renderGrid(currentFilter);
+    document.getElementById('up-name').value='';
+    document.getElementById('up-desc').value='';
+    document.getElementById('file-name-display').textContent='';
+    document.getElementById('file-size-warn').textContent='';
     document.getElementById('up-file').value='';
-    document.getElementById('up-folder').value='';
-    selectedFile=null;selectedFolderFiles=[];folderFilePaths=[];
-    setTimeout(hideProgress,2000);
-
-  }catch(err){
-    setStatus('Error: '+err.message,'error');
-    hideProgress();
-  }
-  btn.disabled=false;
+    selectedFile=null;selectedFileB64=null;
+  }catch(e){projects.shift();setStatus('Error: '+e.message,'error');}
+  btn.disabled=false;isSaving=false;
 }
 
-// ── Init ──────────────────────────────────────────────────────────────────────
-loadProjects();
+loadSession();
+fetchProjects();
+setInterval(fetchProjects,30000);
 </script>
 </body>
 </html>

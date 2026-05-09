@@ -41,6 +41,14 @@ a{color:inherit;text-decoration:none}
 .avatar-upload-input{display:none}
 .avatar-hint{font-size:.72rem;color:#555;text-align:center}
 
+/* Crop modal */
+.crop-modal-inner{max-width:320px}
+.crop-canvas-wrap{position:relative;width:240px;height:240px;margin:0 auto 14px;cursor:move;user-select:none;overflow:hidden;border-radius:8px;background:#0a0a0a;touch-action:none}
+.crop-zoom-row{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.crop-zoom-row label{font-size:.75rem;color:#555;white-space:nowrap}
+.crop-zoom-row input[type=range]{flex:1;accent-color:#60a5fa;cursor:pointer}
+.crop-hint{font-size:.72rem;color:#444;text-align:center;margin-bottom:14px}
+
 /* Public profile view modal */
 .pub-profile-modal{max-width:420px}
 .pub-profile-header{display:flex;flex-direction:column;align-items:center;gap:12px;margin-bottom:22px}
@@ -112,9 +120,13 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:14px 2
 .card-desc{font-size:.82rem;color:#777;line-height:1.6;flex:1}
 .card-footer{display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid #242424}
 .card-meta{font-size:.75rem;color:#555}
-.card-actions{display:flex;gap:6px}
+.card-actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .dl-btn{display:flex;align-items:center;gap:5px;padding:5px 12px;border-radius:6px;background:#1e1e1e;border:1px solid #2a2a2a;color:#aaa;font-size:.78rem;cursor:pointer;transition:all .15s}
 .dl-btn:hover{border-color:#555;color:#fff}
+.like-btn{display:flex;align-items:center;gap:4px;padding:5px 10px;border-radius:6px;background:transparent;border:1px solid #2a2a2a;color:#888;font-size:.78rem;cursor:pointer;transition:all .15s;line-height:1}
+.like-btn:hover{border-color:#c55;color:#f87171}
+.like-btn.liked{border-color:#8b2a2a;color:#f87171;background:#2a1010}
+.like-count{font-size:.74rem;min-width:8px;text-align:center}
 .edit-btn{display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:6px;background:transparent;border:1px solid #1f2d3d;color:#60a5fa;font-size:.78rem;cursor:pointer;transition:all .15s}
 .edit-btn:hover{background:#1a1f2a}
 .del-btn{display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:6px;background:transparent;border:1px solid #3d1f1f;color:#f87171;font-size:.78rem;cursor:pointer;transition:all .15s}
@@ -202,6 +214,24 @@ footer{text-align:center;padding:24px;border-top:1px solid #2a2a2a;color:#444;fo
   </div>
 </div>
 
+<!-- AVATAR CROP MODAL -->
+<div class="modal-overlay hidden" id="crop-modal">
+  <div class="modal crop-modal-inner">
+    <h2>✂️ Crop Photo</h2>
+    <p>Drag to reposition · scroll or pinch to zoom</p>
+    <div class="crop-canvas-wrap" id="crop-canvas-wrap">
+      <canvas id="crop-canvas" width="240" height="240"></canvas>
+    </div>
+    <div class="crop-zoom-row">
+      <label>🔍 Zoom</label>
+      <input type="range" id="crop-zoom" min="0.5" max="3" step="0.01" value="1" oninput="onCropZoom(this.value)">
+    </div>
+    <div class="crop-hint">Tip: For a profile photo, zoom in on your face</div>
+    <button class="modal-btn" onclick="confirmCrop()">✔ Use This Photo</button>
+    <button class="modal-btn danger" style="margin-top:8px" onclick="closeCropModal()">Cancel</button>
+  </div>
+</div>
+
 <!-- EDIT PROFILE MODAL -->
 <div class="modal-overlay hidden" id="profile-modal">
   <div class="modal">
@@ -213,7 +243,7 @@ footer{text-align:center;padding:24px;border-top:1px solid #2a2a2a;color:#444;fo
         <div class="avatar-overlay">📷<br>Change photo</div>
       </div>
       <input type="file" id="avatar-upload" class="avatar-upload-input" accept="image/png,image/jpeg,image/gif,image/webp" onchange="onAvatarChange(this)">
-      <div class="avatar-hint">Click avatar to upload a PNG/JPG/GIF (max 500 KB)</div>
+      <div class="avatar-hint">Click avatar to upload · crop tool will open automatically</div>
     </div>
     <div class="form-row"><label>Display name</label><input type="text" id="profile-displayname" placeholder="Your name"></div>
     <div class="form-row"><label>Bio (optional)</label><textarea id="profile-bio" placeholder="Tell people about yourself…" style="min-height:60px"></textarea></div>
@@ -450,6 +480,136 @@ function doRegister(){
 }
 function doLogout(){currentUser=null;clearSession();applySession();renderGrid(currentFilter);}
 
+/* ── avatar crop ── */
+let cropImg=null,cropScale=1,cropOffX=0,cropOffY=0;
+let cropDragging=false,cropDragSX=0,cropDragSY=0,cropStartOffX=0,cropStartOffY=0;
+const CROP_SIZE=240;
+
+function openCropModal(dataURL){
+  cropImg=new Image();
+  cropImg.onload=()=>{
+    const fitScale=Math.max(CROP_SIZE/cropImg.width,CROP_SIZE/cropImg.height);
+    cropScale=fitScale*1.15;
+    const imgW=cropImg.width*cropScale;
+    const imgH=cropImg.height*cropScale;
+    cropOffX=(CROP_SIZE-imgW)/2;
+    // Portrait bias: position face in upper portion
+    if(cropImg.height>cropImg.width*1.1){
+      // Show upper ~25% of image at center of circle
+      const faceYOrig=cropImg.height*0.22;
+      cropOffY=CROP_SIZE/2-faceYOrig*cropScale;
+    } else {
+      cropOffY=(CROP_SIZE-imgH)/2;
+    }
+    const zoomEl=document.getElementById('crop-zoom');
+    zoomEl.min=fitScale;
+    zoomEl.max=fitScale*4;
+    zoomEl.step=fitScale*0.01;
+    zoomEl.value=cropScale;
+    drawCrop();
+    document.getElementById('crop-modal').classList.remove('hidden');
+  };
+  cropImg.src=dataURL;
+}
+
+function drawCrop(){
+  if(!cropImg)return;
+  const canvas=document.getElementById('crop-canvas');
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,CROP_SIZE,CROP_SIZE);
+  ctx.drawImage(cropImg,cropOffX,cropOffY,cropImg.width*cropScale,cropImg.height*cropScale);
+  // Dim overlay with circle cutout
+  ctx.save();
+  ctx.fillStyle='rgba(0,0,0,0.6)';
+  ctx.beginPath();
+  ctx.rect(0,0,CROP_SIZE,CROP_SIZE);
+  ctx.arc(CROP_SIZE/2,CROP_SIZE/2,CROP_SIZE/2-1,0,Math.PI*2,true);
+  ctx.fill('evenodd');
+  // Circle border
+  ctx.strokeStyle='#555';
+  ctx.lineWidth=1.5;
+  ctx.beginPath();
+  ctx.arc(CROP_SIZE/2,CROP_SIZE/2,CROP_SIZE/2-1,0,Math.PI*2);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function onCropZoom(val){
+  const newScale=parseFloat(val);
+  // Keep center point stable during zoom
+  const cx=CROP_SIZE/2,cy=CROP_SIZE/2;
+  const imgCX=(cx-cropOffX)/cropScale;
+  const imgCY=(cy-cropOffY)/cropScale;
+  cropScale=newScale;
+  cropOffX=cx-imgCX*cropScale;
+  cropOffY=cy-imgCY*cropScale;
+  drawCrop();
+}
+
+// Mouse drag
+const cropWrap=()=>document.getElementById('crop-canvas-wrap');
+document.addEventListener('DOMContentLoaded',()=>{
+  const wrap=document.getElementById('crop-canvas-wrap');
+  wrap.addEventListener('mousedown',e=>{
+    cropDragging=true;cropDragSX=e.clientX;cropDragSY=e.clientY;
+    cropStartOffX=cropOffX;cropStartOffY=cropOffY;e.preventDefault();
+  });
+  document.addEventListener('mousemove',e=>{
+    if(!cropDragging)return;
+    cropOffX=cropStartOffX+(e.clientX-cropDragSX);
+    cropOffY=cropStartOffY+(e.clientY-cropDragSY);
+    drawCrop();
+  });
+  document.addEventListener('mouseup',()=>{cropDragging=false;});
+  // Touch
+  wrap.addEventListener('touchstart',e=>{
+    if(e.touches.length===1){
+      cropDragging=true;
+      cropDragSX=e.touches[0].clientX;cropDragSY=e.touches[0].clientY;
+      cropStartOffX=cropOffX;cropStartOffY=cropOffY;
+    }
+    e.preventDefault();
+  },{passive:false});
+  wrap.addEventListener('touchmove',e=>{
+    if(!cropDragging||e.touches.length!==1)return;
+    cropOffX=cropStartOffX+(e.touches[0].clientX-cropDragSX);
+    cropOffY=cropStartOffY+(e.touches[0].clientY-cropDragSY);
+    drawCrop();e.preventDefault();
+  },{passive:false});
+  wrap.addEventListener('touchend',()=>{cropDragging=false;});
+  // Wheel zoom
+  wrap.addEventListener('wheel',e=>{
+    e.preventDefault();
+    const delta=e.deltaY>0?-0.05:0.05;
+    const newScale=Math.max(0.5,Math.min(5,cropScale+delta*cropScale));
+    const zoomEl=document.getElementById('crop-zoom');
+    zoomEl.value=newScale;
+    onCropZoom(newScale);
+  },{passive:false});
+});
+
+function confirmCrop(){
+  const out=document.createElement('canvas');out.width=200;out.height=200;
+  const ctx=out.getContext('2d');
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(100,100,100,0,Math.PI*2);
+  ctx.clip();
+  const ratio=200/CROP_SIZE;
+  ctx.drawImage(cropImg,cropOffX*ratio,cropOffY*ratio,cropImg.width*cropScale*ratio,cropImg.height*cropScale*ratio);
+  ctx.restore();
+  const result=out.toDataURL('image/jpeg',0.85);
+  pendingAvatarB64=result;
+  const prev=document.getElementById('profile-avatar-preview');
+  prev.innerHTML=`<img src="${result}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+  document.getElementById('crop-modal').classList.add('hidden');
+}
+
+function closeCropModal(){
+  document.getElementById('crop-modal').classList.add('hidden');
+  document.getElementById('avatar-upload').value='';
+}
+
 /* ── profile edit modal ── */
 function openProfileModal(){
   if(!currentUser)return;
@@ -477,11 +637,7 @@ function onAvatarChange(input){
   if(file.size>500*1024){showErr('profile-err','Image too large — keep under 500 KB.');return;}
   clearErr('profile-err');
   const fr=new FileReader();
-  fr.onload=()=>{
-    pendingAvatarB64=fr.result;
-    const prev=document.getElementById('profile-avatar-preview');
-    prev.innerHTML=`<img src="${fr.result}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
-  };
+  fr.onload=()=>{ openCropModal(fr.result); };
   fr.readAsDataURL(file);
 }
 
@@ -517,7 +673,6 @@ function openPubProfile(username){
   const userProjects=projects.filter(p=>p.uploader===username);
   const fileCount=userProjects.filter(p=>p.fileB64).length;
 
-  // avatar
   const avatarEl=document.getElementById('pub-avatar');
   const av=getUserAvatar(username);
   if(av){
@@ -527,11 +682,9 @@ function openPubProfile(username){
     avatarEl.style.fontSize='2.2rem';
   }
 
-  // name + owner badge
   const ownerBadge=isOwner(username)?`<span class="owner-badge">👑 Owner</span>`:'';
   document.getElementById('pub-name').innerHTML=esc(username)+ownerBadge;
 
-  // bio
   const bioEl=document.getElementById('pub-bio');
   if(data&&data.bio){
     bioEl.textContent=data.bio;
@@ -543,7 +696,6 @@ function openPubProfile(username){
   document.getElementById('pub-proj-count').textContent=userProjects.length;
   document.getElementById('pub-file-count').textContent=fileCount;
 
-  // project list
   const list=document.getElementById('pub-project-list');
   if(!userProjects.length){
     list.innerHTML=`<div class="pub-no-projects">No projects yet.</div>`;
@@ -596,6 +748,53 @@ async function saveEdit(){
   isSaving=false;
 }
 
+/* ── likes ── */
+async function toggleLike(id){
+  if(!currentUser){showAuthModal();return;}
+  if(isSaving)return;
+  const idx=projects.findIndex(x=>x.id===id);
+  if(idx===-1)return;
+  const p=projects[idx];
+  if(!p.likedBy)p.likedBy=[];
+  const username=currentUser.username;
+  const alreadyLiked=p.likedBy.includes(username);
+  // Optimistic update
+  if(alreadyLiked){
+    p.likedBy=p.likedBy.filter(u=>u!==username);
+    p.likes=Math.max(0,(p.likes||1)-1);
+  } else {
+    p.likedBy.push(username);
+    p.likes=(p.likes||0)+1;
+  }
+  renderGrid(currentFilter);
+  isSaving=true;
+  try{
+    const fresh=await fetchLatest();
+    if(fresh){
+      const fi=fresh.findIndex(x=>x.id===id);
+      if(fi!==-1){
+        if(!fresh[fi].likedBy)fresh[fi].likedBy=[];
+        if(alreadyLiked){
+          fresh[fi].likedBy=fresh[fi].likedBy.filter(u=>u!==username);
+          fresh[fi].likes=Math.max(0,(fresh[fi].likes||1)-1);
+        } else if(!fresh[fi].likedBy.includes(username)){
+          fresh[fi].likedBy.push(username);
+          fresh[fi].likes=(fresh[fi].likes||0)+1;
+        }
+        projects=fresh;
+      }
+    }
+    await persistProjects();
+    renderGrid(currentFilter);
+  }catch(e){
+    // revert on error
+    if(alreadyLiked){if(!p.likedBy.includes(username))p.likedBy.push(username);p.likes=(p.likes||0)+1;}
+    else{p.likedBy=p.likedBy.filter(u=>u!==username);p.likes=Math.max(0,(p.likes||1)-1);}
+    renderGrid(currentFilter);
+  }
+  isSaving=false;
+}
+
 /* ── JSONBin ── */
 async function fetchLatest(){
   const r=await fetch(BIN_URL+'/latest',{headers:{'X-Master-Key':JSONBIN_API_KEY,'X-Bin-Meta':false}});
@@ -634,6 +833,8 @@ function renderGrid(filter='all'){
       ?`<span class="card-uploader" onclick="openPubProfile('${esc(p.uploader)}')" title="View ${esc(p.uploader)}'s profile">${avatarHTML(p.uploader,18)}<span class="u-name">${esc(p.uploader)}</span>${ownerUp?`<span class="owner-badge" style="font-size:.55rem;padding:1px 5px">👑</span>`:''}</span>`:'';
     const canDel=currentUser&&(currentUser.username===p.uploader||isOwner(currentUser.username));
     const canEdit=currentUser&&isOwner(currentUser.username);
+    const isLiked=currentUser&&(p.likedBy||[]).includes(currentUser.username);
+    const likeCount=p.likes||0;
     return`<div class="project-card">
       <div class="card-icon">${ICONS[p.type]||'📦'}${i===0&&filter==='all'?'<span class="new-badge">NEW</span>':''}</div>
       <div class="card-body">
@@ -643,6 +844,7 @@ function renderGrid(filter='all'){
         <div class="card-footer">
           <span class="card-meta">${p.date||''}</span>
           <div class="card-actions">
+            <button class="like-btn${isLiked?' liked':''}" onclick="toggleLike('${p.id}')" title="${isLiked?'Unlike':'Like'}">${isLiked?'❤️':'🤍'}<span class="like-count">${likeCount>0?' '+likeCount:''}</span></button>
             ${p.fileB64?`<button class="dl-btn" onclick="downloadFile('${p.id}')">⬇ Download</button>`:''}
             ${canEdit?`<button class="edit-btn" onclick="openEditModal('${p.id}')">✏️</button>`:''}
             ${canDel?`<button class="del-btn" onclick="deleteProject('${p.id}')">✕</button>`:''}
@@ -724,6 +926,7 @@ async function uploadProject(){
       fileB64:selectedFileB64||null,
       fileName:selectedFile?selectedFile.name:null,
       fileMime:selectedFile?selectedFile.type||'application/octet-stream':null,
+      likes:0,likedBy:[],
     };
     projects.unshift(entry);
     await persistProjects();

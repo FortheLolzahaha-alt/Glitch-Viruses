@@ -28,6 +28,19 @@ a{color:inherit;text-decoration:none}
 .modal-btn.danger:hover{background:#4a2020}
 .modal-err{font-size:.78rem;color:#f87171;margin-top:8px;display:none}
 .modal-err.show{display:block}
+.modal-success{font-size:.78rem;color:#4ade80;margin-top:8px;display:none}
+.modal-success.show{display:block}
+
+/* Profile modal */
+.profile-avatar-section{display:flex;flex-direction:column;align-items:center;margin-bottom:20px;gap:12px}
+.profile-avatar-large{width:80px;height:80px;border-radius:50%;border:2px solid #2a2a2a;object-fit:cover;background:#1e1e1e;display:flex;align-items:center;justify-content:center;font-size:2rem;overflow:hidden;cursor:pointer;transition:border-color .15s;position:relative}
+.profile-avatar-large:hover{border-color:#444}
+.profile-avatar-large img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.profile-avatar-large .avatar-overlay{position:absolute;inset:0;background:rgba(0,0,0,.5);border-radius:50%;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s;font-size:.7rem;color:#fff;text-align:center;line-height:1.3}
+.profile-avatar-large:hover .avatar-overlay{opacity:1}
+.avatar-upload-input{display:none}
+.avatar-hint{font-size:.72rem;color:#555;text-align:center}
+
 nav{display:flex;align-items:center;justify-content:space-between;padding:14px 28px;border-bottom:1px solid #2a2a2a;background:#121212;position:sticky;top:0;z-index:100}
 .nav-logo{font-size:1rem;font-weight:600;color:#fff}
 .nav-links{display:flex;gap:16px;align-items:center}
@@ -38,6 +51,12 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:14px 2
 .owner-badge{background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;font-size:.6rem;font-weight:800;padding:2px 7px;border-radius:3px;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
 .nav-logout{font-size:.75rem;color:#555;cursor:pointer;border:1px solid #2a2a2a;padding:3px 9px;border-radius:5px;background:transparent;transition:all .15s}
 .nav-logout:hover{color:#aaa;border-color:#444}
+
+/* Nav avatar */
+.nav-avatar{width:30px;height:30px;border-radius:50%;border:1px solid #2a2a2a;object-fit:cover;background:#1e1e1e;display:flex;align-items:center;justify-content:center;font-size:.85rem;overflow:hidden;cursor:pointer;transition:border-color .15s;flex-shrink:0}
+.nav-avatar:hover{border-color:#555}
+.nav-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+
 .hero{padding:40px 28px 28px;max-width:680px}
 .hero h1{font-size:1.9rem;font-weight:600;color:#fff;line-height:1.25;margin-bottom:10px}
 .hero p{font-size:.925rem;color:#888;line-height:1.7}
@@ -64,6 +83,8 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:14px 2
 .tag-script{background:#221a2a;color:#a78bfa;border:1px solid #321f3d}
 .card-uploader{display:flex;align-items:center;gap:5px;margin-left:auto;font-size:.72rem}
 .card-uploader .u-name{color:#888}
+.card-uploader-avatar{width:18px;height:18px;border-radius:50%;border:1px solid #2a2a2a;object-fit:cover;background:#1e1e1e;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:.55rem;flex-shrink:0}
+.card-uploader-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
 .card-title{font-size:.95rem;font-weight:600;color:#fff;margin-bottom:5px}
 .card-desc{font-size:.82rem;color:#777;line-height:1.6;flex:1}
 .card-footer{display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid #242424}
@@ -135,7 +156,7 @@ footer{text-align:center;padding:24px;border-top:1px solid #2a2a2a;color:#444;fo
   </div>
 </div>
 
-<!-- EDIT MODAL (owner only) -->
+<!-- EDIT PROJECT MODAL (owner only) -->
 <div class="modal-overlay hidden" id="edit-modal">
   <div class="modal">
     <h2>✏️ Edit Project</h2>
@@ -158,12 +179,38 @@ footer{text-align:center;padding:24px;border-top:1px solid #2a2a2a;color:#444;fo
   </div>
 </div>
 
+<!-- PROFILE MODAL -->
+<div class="modal-overlay hidden" id="profile-modal">
+  <div class="modal">
+    <h2>👤 Edit Profile</h2>
+    <p>Update your avatar and display name.</p>
+    <div class="profile-avatar-section">
+      <div class="profile-avatar-large" onclick="document.getElementById('avatar-upload').click()">
+        <div id="profile-avatar-preview">🙂</div>
+        <div class="avatar-overlay">📷<br>Change photo</div>
+      </div>
+      <input type="file" id="avatar-upload" class="avatar-upload-input" accept="image/png,image/jpeg,image/gif,image/webp" onchange="onAvatarChange(this)">
+      <div class="avatar-hint">Click avatar to upload a PNG/JPG image</div>
+    </div>
+    <div class="form-row"><label>Display name</label><input type="text" id="profile-displayname" placeholder="Your name"></div>
+    <div class="form-row"><label>Bio (optional)</label><textarea id="profile-bio" placeholder="Tell people about yourself…" style="min-height:60px"></textarea></div>
+    <div class="form-row"><label>New password (leave blank to keep current)</label><input type="password" id="profile-newpass" placeholder="••••••••"></div>
+    <button class="modal-btn" onclick="saveProfile()">Save Profile</button>
+    <button class="modal-btn danger" style="margin-top:8px" onclick="closeProfileModal()">Cancel</button>
+    <div class="modal-err" id="profile-err"></div>
+    <div class="modal-success" id="profile-success"></div>
+  </div>
+</div>
+
 <nav>
   <div class="nav-logo">Glitch Viruses</div>
   <div class="nav-links">
     <a onclick="document.getElementById('projects-section').scrollIntoView({behavior:'smooth'})">Projects</a>
     <a onclick="openUpload()">Upload</a>
     <div class="nav-user" id="nav-user-area" style="display:none">
+      <div class="nav-avatar" id="nav-avatar" onclick="openProfileModal()" title="Edit profile">
+        <div id="nav-avatar-inner">👤</div>
+      </div>
       <span class="nav-username" id="nav-username"></span>
       <span class="owner-badge" id="nav-owner-badge" style="display:none">👑 Owner</span>
       <button class="nav-logout" onclick="doLogout()">logout</button>
@@ -256,6 +303,7 @@ let currentFilter   = 'all';
 let currentUser     = null;
 let isSaving        = false;
 let editingId       = null;
+let pendingAvatarB64= null;
 
 function esc(s){const d=document.createElement('div');d.textContent=s||'';return d.innerHTML;}
 function isOwner(u){return u&&u.toLowerCase()===OWNER_NAME.toLowerCase();}
@@ -264,6 +312,35 @@ function setStatus(msg,type){const el=document.getElementById('status-msg');el.t
 /* ── users ── */
 function getUsers(){try{return JSON.parse(localStorage.getItem(USERS_KEY)||'{}')}catch(e){return{}}}
 function saveUsers(u){localStorage.setItem(USERS_KEY,JSON.stringify(u));}
+function getUserData(username){
+  if(!username)return null;
+  const users=getUsers();
+  return users[username.toLowerCase()]||null;
+}
+function getUserAvatar(username){
+  const data=getUserData(username);
+  return data&&data.avatar?data.avatar:null;
+}
+
+/* ── avatar helpers ── */
+function avatarHTML(username,size=18){
+  const av=getUserAvatar(username);
+  if(av){
+    return`<div class="card-uploader-avatar" style="width:${size}px;height:${size}px"><img src="${av}" alt=""></div>`;
+  }
+  return`<div class="card-uploader-avatar" style="width:${size}px;height:${size}px;font-size:${Math.round(size*.5)}px">👤</div>`;
+}
+
+function updateNavAvatar(){
+  const inner=document.getElementById('nav-avatar-inner');
+  if(!inner||!currentUser)return;
+  const av=getUserAvatar(currentUser.username);
+  if(av){
+    inner.innerHTML=`<img src="${av}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+  } else {
+    inner.innerHTML='👤';
+  }
+}
 
 /* ── session ── */
 function saveSession(u){localStorage.setItem(SESSION_KEY,u);}
@@ -281,6 +358,7 @@ function applySession(){
   if(currentUser){
     area.style.display='flex';signinBtn.style.display='none';
     badge.style.display=isOwner(currentUser.username)?'inline':'none';
+    updateNavAvatar();
   } else {
     area.style.display='none';signinBtn.style.display='inline';
   }
@@ -320,12 +398,74 @@ function doRegister(){
   if(password.length<4){showErr('reg-err','Password must be 4+ chars.');return;}
   const users=getUsers();
   if(users[username.toLowerCase()]){showErr('reg-err','Username taken.');return;}
-  users[username.toLowerCase()]={displayName:username,password:btoa(password)};
+  users[username.toLowerCase()]={displayName:username,password:btoa(password),avatar:null,bio:''};
   saveUsers(users);currentUser={username};saveSession(username);applySession();hideAuthModal();renderGrid(currentFilter);
 }
 function doLogout(){currentUser=null;clearSession();applySession();renderGrid(currentFilter);}
 
-/* ── edit modal ── */
+/* ── profile modal ── */
+function openProfileModal(){
+  if(!currentUser)return;
+  const data=getUserData(currentUser.username);
+  document.getElementById('profile-displayname').value=currentUser.username;
+  document.getElementById('profile-bio').value=(data&&data.bio)||'';
+  document.getElementById('profile-newpass').value='';
+  clearErr('profile-err');
+  document.getElementById('profile-success').classList.remove('show');
+  pendingAvatarB64=null;
+  // show current avatar in modal
+  const prev=document.getElementById('profile-avatar-preview');
+  const av=getUserAvatar(currentUser.username);
+  if(av){
+    prev.innerHTML=`<img src="${av}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+  } else {
+    prev.innerHTML='🙂';
+    prev.style.display='flex';
+    prev.style.alignItems='center';
+    prev.style.justifyContent='center';
+  }
+  document.getElementById('profile-modal').classList.remove('hidden');
+}
+function closeProfileModal(){document.getElementById('profile-modal').classList.add('hidden');pendingAvatarB64=null;}
+
+function onAvatarChange(input){
+  const file=input.files[0];if(!file)return;
+  if(file.size>500*1024){showErr('profile-err','Image too large — keep under 500 KB.');return;}
+  const fr=new FileReader();
+  fr.onload=()=>{
+    pendingAvatarB64=fr.result; // full data URL
+    const prev=document.getElementById('profile-avatar-preview');
+    prev.innerHTML=`<img src="${fr.result}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+  };
+  fr.readAsDataURL(file);
+}
+
+function saveProfile(){
+  clearErr('profile-err');
+  const displayName=document.getElementById('profile-displayname').value.trim();
+  const bio=document.getElementById('profile-bio').value.trim();
+  const newpass=document.getElementById('profile-newpass').value;
+  if(!displayName){showErr('profile-err','Display name cannot be empty.');return;}
+  const users=getUsers();
+  const key=currentUser.username.toLowerCase();
+  if(!users[key]){showErr('profile-err','User not found.');return;}
+  if(newpass&&newpass.length<4){showErr('profile-err','New password must be 4+ chars.');return;}
+  users[key].displayName=displayName;
+  users[key].bio=bio;
+  if(pendingAvatarB64)users[key].avatar=pendingAvatarB64;
+  if(newpass)users[key].password=btoa(newpass);
+  saveUsers(users);
+  currentUser={username:displayName};
+  saveSession(displayName);
+  document.getElementById('nav-username').textContent=displayName;
+  updateNavAvatar();
+  renderGrid(currentFilter);
+  const suc=document.getElementById('profile-success');
+  suc.textContent='Profile saved!';suc.classList.add('show');
+  setTimeout(()=>closeProfileModal(),900);
+}
+
+/* ── edit project modal ── */
 function openEditModal(id){
   const p=projects.find(x=>x.id===id);if(!p)return;
   editingId=id;
@@ -398,7 +538,7 @@ function renderGrid(filter='all'){
   grid.innerHTML=visible.map((p,i)=>{
     const ownerUp=isOwner(p.uploader);
     const uploaderHTML=p.uploader
-      ?`<span class="card-uploader"><span class="u-name">${esc(p.uploader)}</span>${ownerUp?`<span class="owner-badge" style="font-size:.55rem;padding:1px 5px">👑</span>`:''}</span>`:'';
+      ?`<span class="card-uploader">${avatarHTML(p.uploader,18)}<span class="u-name">${esc(p.uploader)}</span>${ownerUp?`<span class="owner-badge" style="font-size:.55rem;padding:1px 5px">👑</span>`:''}</span>`:'';
     const canDel=currentUser&&(currentUser.username===p.uploader||isOwner(currentUser.username));
     const canEdit=currentUser&&isOwner(currentUser.username);
     return`<div class="project-card">

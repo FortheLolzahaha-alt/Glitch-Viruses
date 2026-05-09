@@ -33,7 +33,7 @@ a{color:inherit;text-decoration:none}
 
 /* Profile edit modal */
 .profile-avatar-section{display:flex;flex-direction:column;align-items:center;margin-bottom:20px;gap:12px}
-.profile-avatar-large{width:80px;height:80px;border-radius:50%;border:2px solid #2a2a2a;object-fit:cover;background:#1e1e1e;display:flex;align-items:center;justify-content:center;font-size:2rem;overflow:hidden;cursor:pointer;transition:border-color .15s;position:relative}
+.profile-avatar-large{width:80px;height:80px;border-radius:50%;border:2px solid #2a2a2a;background:#1e1e1e;display:flex;align-items:center;justify-content:center;font-size:2rem;overflow:hidden;cursor:pointer;transition:border-color .15s;position:relative}
 .profile-avatar-large:hover{border-color:#555}
 .profile-avatar-large img{width:100%;height:100%;object-fit:cover;border-radius:50%}
 .profile-avatar-large .avatar-overlay{position:absolute;inset:0;background:rgba(0,0,0,.55);border-radius:50%;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s;font-size:.7rem;color:#fff;text-align:center;line-height:1.4;flex-direction:column;gap:2px}
@@ -123,10 +123,6 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:14px 2
 .card-actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .dl-btn{display:flex;align-items:center;gap:5px;padding:5px 12px;border-radius:6px;background:#1e1e1e;border:1px solid #2a2a2a;color:#aaa;font-size:.78rem;cursor:pointer;transition:all .15s}
 .dl-btn:hover{border-color:#555;color:#fff}
-.like-btn{display:flex;align-items:center;gap:4px;padding:5px 10px;border-radius:6px;background:transparent;border:1px solid #2a2a2a;color:#888;font-size:.78rem;cursor:pointer;transition:all .15s;line-height:1}
-.like-btn:hover{border-color:#c55;color:#f87171}
-.like-btn.liked{border-color:#8b2a2a;color:#f87171;background:#2a1010}
-.like-count{font-size:.74rem;min-width:8px;text-align:center}
 .edit-btn{display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:6px;background:transparent;border:1px solid #1f2d3d;color:#60a5fa;font-size:.78rem;cursor:pointer;transition:all .15s}
 .edit-btn:hover{background:#1a1f2a}
 .del-btn{display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:6px;background:transparent;border:1px solid #3d1f1f;color:#f87171;font-size:.78rem;cursor:pointer;transition:all .15s}
@@ -238,11 +234,11 @@ footer{text-align:center;padding:24px;border-top:1px solid #2a2a2a;color:#444;fo
     <h2>👤 Edit Profile</h2>
     <p>Update your avatar and display name.</p>
     <div class="profile-avatar-section">
-      <div class="profile-avatar-large" onclick="document.getElementById('avatar-upload').click()">
+      <div class="profile-avatar-large" id="avatar-click-target">
         <div id="profile-avatar-preview" style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:2rem">🙂</div>
         <div class="avatar-overlay">📷<br>Change photo</div>
       </div>
-      <input type="file" id="avatar-upload" class="avatar-upload-input" accept="image/png,image/jpeg,image/gif,image/webp" onchange="onAvatarChange(this)">
+      <input type="file" id="avatar-upload" class="avatar-upload-input" accept="image/png,image/jpeg,image/gif,image/webp">
       <div class="avatar-hint">Click avatar to upload · crop tool will open automatically</div>
     </div>
     <div class="form-row"><label>Display name</label><input type="text" id="profile-displayname" placeholder="Your name"></div>
@@ -493,9 +489,7 @@ function openCropModal(dataURL){
     const imgW=cropImg.width*cropScale;
     const imgH=cropImg.height*cropScale;
     cropOffX=(CROP_SIZE-imgW)/2;
-    // Portrait bias: position face in upper portion
     if(cropImg.height>cropImg.width*1.1){
-      // Show upper ~25% of image at center of circle
       const faceYOrig=cropImg.height*0.22;
       cropOffY=CROP_SIZE/2-faceYOrig*cropScale;
     } else {
@@ -518,14 +512,12 @@ function drawCrop(){
   const ctx=canvas.getContext('2d');
   ctx.clearRect(0,0,CROP_SIZE,CROP_SIZE);
   ctx.drawImage(cropImg,cropOffX,cropOffY,cropImg.width*cropScale,cropImg.height*cropScale);
-  // Dim overlay with circle cutout
   ctx.save();
   ctx.fillStyle='rgba(0,0,0,0.6)';
   ctx.beginPath();
   ctx.rect(0,0,CROP_SIZE,CROP_SIZE);
   ctx.arc(CROP_SIZE/2,CROP_SIZE/2,CROP_SIZE/2-1,0,Math.PI*2,true);
   ctx.fill('evenodd');
-  // Circle border
   ctx.strokeStyle='#555';
   ctx.lineWidth=1.5;
   ctx.beginPath();
@@ -536,7 +528,6 @@ function drawCrop(){
 
 function onCropZoom(val){
   const newScale=parseFloat(val);
-  // Keep center point stable during zoom
   const cx=CROP_SIZE/2,cy=CROP_SIZE/2;
   const imgCX=(cx-cropOffX)/cropScale;
   const imgCY=(cy-cropOffY)/cropScale;
@@ -546,9 +537,27 @@ function onCropZoom(val){
   drawCrop();
 }
 
-// Mouse drag
-const cropWrap=()=>document.getElementById('crop-canvas-wrap');
 document.addEventListener('DOMContentLoaded',()=>{
+  // FIX: wire up avatar click properly so crop always opens instantly
+  const avatarClickTarget=document.getElementById('avatar-click-target');
+  const avatarUpload=document.getElementById('avatar-upload');
+
+  avatarClickTarget.addEventListener('click',()=>{
+    avatarUpload.value=''; // reset so same file can be re-selected
+    avatarUpload.click();
+  });
+
+  avatarUpload.addEventListener('change',function(){
+    const file=this.files[0];
+    if(!file)return;
+    if(file.size>500*1024){showErr('profile-err','Image too large — keep under 500 KB.');return;}
+    clearErr('profile-err');
+    const fr=new FileReader();
+    fr.onload=()=>{openCropModal(fr.result);};
+    fr.readAsDataURL(file);
+  });
+
+  // Crop drag — mouse
   const wrap=document.getElementById('crop-canvas-wrap');
   wrap.addEventListener('mousedown',e=>{
     cropDragging=true;cropDragSX=e.clientX;cropDragSY=e.clientY;
@@ -631,15 +640,6 @@ function openProfileModal(){
   document.getElementById('profile-modal').classList.remove('hidden');
 }
 function closeProfileModal(){document.getElementById('profile-modal').classList.add('hidden');pendingAvatarB64=null;}
-
-function onAvatarChange(input){
-  const file=input.files[0];if(!file)return;
-  if(file.size>500*1024){showErr('profile-err','Image too large — keep under 500 KB.');return;}
-  clearErr('profile-err');
-  const fr=new FileReader();
-  fr.onload=()=>{ openCropModal(fr.result); };
-  fr.readAsDataURL(file);
-}
 
 function saveProfile(){
   clearErr('profile-err');
@@ -748,53 +748,6 @@ async function saveEdit(){
   isSaving=false;
 }
 
-/* ── likes ── */
-async function toggleLike(id){
-  if(!currentUser){showAuthModal();return;}
-  if(isSaving)return;
-  const idx=projects.findIndex(x=>x.id===id);
-  if(idx===-1)return;
-  const p=projects[idx];
-  if(!p.likedBy)p.likedBy=[];
-  const username=currentUser.username;
-  const alreadyLiked=p.likedBy.includes(username);
-  // Optimistic update
-  if(alreadyLiked){
-    p.likedBy=p.likedBy.filter(u=>u!==username);
-    p.likes=Math.max(0,(p.likes||1)-1);
-  } else {
-    p.likedBy.push(username);
-    p.likes=(p.likes||0)+1;
-  }
-  renderGrid(currentFilter);
-  isSaving=true;
-  try{
-    const fresh=await fetchLatest();
-    if(fresh){
-      const fi=fresh.findIndex(x=>x.id===id);
-      if(fi!==-1){
-        if(!fresh[fi].likedBy)fresh[fi].likedBy=[];
-        if(alreadyLiked){
-          fresh[fi].likedBy=fresh[fi].likedBy.filter(u=>u!==username);
-          fresh[fi].likes=Math.max(0,(fresh[fi].likes||1)-1);
-        } else if(!fresh[fi].likedBy.includes(username)){
-          fresh[fi].likedBy.push(username);
-          fresh[fi].likes=(fresh[fi].likes||0)+1;
-        }
-        projects=fresh;
-      }
-    }
-    await persistProjects();
-    renderGrid(currentFilter);
-  }catch(e){
-    // revert on error
-    if(alreadyLiked){if(!p.likedBy.includes(username))p.likedBy.push(username);p.likes=(p.likes||0)+1;}
-    else{p.likedBy=p.likedBy.filter(u=>u!==username);p.likes=Math.max(0,(p.likes||1)-1);}
-    renderGrid(currentFilter);
-  }
-  isSaving=false;
-}
-
 /* ── JSONBin ── */
 async function fetchLatest(){
   const r=await fetch(BIN_URL+'/latest',{headers:{'X-Master-Key':JSONBIN_API_KEY,'X-Bin-Meta':false}});
@@ -833,8 +786,6 @@ function renderGrid(filter='all'){
       ?`<span class="card-uploader" onclick="openPubProfile('${esc(p.uploader)}')" title="View ${esc(p.uploader)}'s profile">${avatarHTML(p.uploader,18)}<span class="u-name">${esc(p.uploader)}</span>${ownerUp?`<span class="owner-badge" style="font-size:.55rem;padding:1px 5px">👑</span>`:''}</span>`:'';
     const canDel=currentUser&&(currentUser.username===p.uploader||isOwner(currentUser.username));
     const canEdit=currentUser&&isOwner(currentUser.username);
-    const isLiked=currentUser&&(p.likedBy||[]).includes(currentUser.username);
-    const likeCount=p.likes||0;
     return`<div class="project-card">
       <div class="card-icon">${ICONS[p.type]||'📦'}${i===0&&filter==='all'?'<span class="new-badge">NEW</span>':''}</div>
       <div class="card-body">
@@ -844,7 +795,6 @@ function renderGrid(filter='all'){
         <div class="card-footer">
           <span class="card-meta">${p.date||''}</span>
           <div class="card-actions">
-            <button class="like-btn${isLiked?' liked':''}" onclick="toggleLike('${p.id}')" title="${isLiked?'Unlike':'Like'}">${isLiked?'❤️':'🤍'}<span class="like-count">${likeCount>0?' '+likeCount:''}</span></button>
             ${p.fileB64?`<button class="dl-btn" onclick="downloadFile('${p.id}')">⬇ Download</button>`:''}
             ${canEdit?`<button class="edit-btn" onclick="openEditModal('${p.id}')">✏️</button>`:''}
             ${canDel?`<button class="del-btn" onclick="deleteProject('${p.id}')">✕</button>`:''}
@@ -926,7 +876,6 @@ async function uploadProject(){
       fileB64:selectedFileB64||null,
       fileName:selectedFile?selectedFile.name:null,
       fileMime:selectedFile?selectedFile.type||'application/octet-stream':null,
-      likes:0,likedBy:[],
     };
     projects.unshift(entry);
     await persistProjects();
